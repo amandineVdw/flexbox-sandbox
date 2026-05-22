@@ -1,0 +1,1537 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Flexbox Sandbox</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0f1117;
+    --surface: #1a1d27;
+    --surface2: #22263a;
+    --border: #2e3350;
+    --accent: #6c63ff;
+    --accent2: #ff6584;
+    --green: #43d98c;
+    --yellow: #ffd166;
+    --text: #e2e8f0;
+    --text-muted: #7b85a5;
+    --font-mono: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+  }
+
+  body {
+    font-family: system-ui, -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 10px 20px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  header h1 { font-size: 1rem; font-weight: 700; letter-spacing: .5px; }
+  header h1 span { color: var(--accent); }
+  .progress-bar-wrap {
+    flex: 1;
+    background: var(--surface2);
+    border-radius: 99px;
+    height: 6px;
+    overflow: hidden;
+    max-width: 200px;
+  }
+  .progress-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--green));
+    border-radius: 99px;
+    transition: width .4s;
+  }
+  .progress-label { font-size: .75rem; color: var(--text-muted); white-space: nowrap; }
+
+  .app { display: flex; flex: 1; overflow: hidden; }
+
+  .sidebar {
+    width: 240px;
+    flex-shrink: 0;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    overflow-y: auto;
+  }
+  .sidebar-section { padding: 8px 0; border-bottom: 1px solid var(--border); }
+  .sidebar-level {
+    font-size: .65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    padding: 8px 14px 4px;
+    color: var(--text-muted);
+  }
+  .exo-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 14px;
+    cursor: pointer;
+    font-size: .82rem;
+    line-height: 1.3;
+    transition: background .15s;
+    border-left: 3px solid transparent;
+  }
+  .exo-item:hover { background: var(--surface2); }
+  .exo-item.active { background: var(--surface2); border-left-color: var(--accent); color: #fff; }
+  .exo-item.done .exo-num { background: var(--green); color: #000; }
+  .exo-num {
+    flex-shrink: 0;
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    background: var(--surface2);
+    font-size: .7rem; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--text-muted);
+  }
+  .exo-item.active .exo-num { background: var(--accent); color: #fff; }
+
+  .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+
+  .desc-bar {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 12px 20px;
+    display: flex; align-items: flex-start; gap: 16px;
+    flex-shrink: 0;
+  }
+  .desc-content { flex: 1; }
+  .desc-content h2 { font-size: .95rem; font-weight: 700; margin-bottom: 4px; }
+  .exo-badge {
+    font-size: .65rem; background: var(--accent); color: #fff;
+    padding: 2px 7px; border-radius: 99px; margin-right: 8px; vertical-align: middle;
+  }
+  .desc-content p { font-size: .82rem; color: #a0aec0; line-height: 1.5; }
+  .desc-actions { display: flex; gap: 8px; flex-shrink: 0; align-items: center; }
+
+  button {
+    border: none; cursor: pointer; border-radius: 6px;
+    font-size: .78rem; font-weight: 600; padding: 6px 12px;
+    transition: opacity .15s, transform .1s;
+  }
+  button:hover { opacity: .85; transform: translateY(-1px); }
+  button:active { transform: translateY(0); }
+  .btn-hint { background: var(--surface2); color: var(--yellow); border: 1px solid var(--border); }
+  .btn-solution { background: var(--surface2); color: var(--accent2); border: 1px solid var(--border); }
+  .btn-check { background: var(--surface2); color: #4fc3f7; border: 1px solid var(--border); }
+  .btn-explain { background: var(--surface2); color: #a78bfa; border: 1px solid var(--border); }
+  .btn-reset { background: var(--surface2); color: var(--text-muted); border: 1px solid var(--border); }
+  .btn-done { background: var(--green); color: #000; }
+  .btn-nav { background: var(--surface2); border: 1px solid var(--border); color: var(--text-muted); padding: 6px 10px; }
+
+  .hint-panel {
+    background: #1a1a2e; border-bottom: 1px solid var(--border);
+    padding: 10px 20px; font-size: .8rem; color: var(--yellow);
+    display: none; line-height: 1.6;
+  }
+  .hint-panel.visible { display: block; }
+  .hint-panel code {
+    background: var(--surface2); padding: 1px 5px; border-radius: 4px;
+    font-family: var(--font-mono); font-size: .78rem; color: #c792ea;
+  }
+
+  .check-panel {
+    background: #0d1117; border-bottom: 1px solid var(--border);
+    padding: 10px 20px; font-size: .8rem;
+    display: none; line-height: 1.8;
+  }
+  .check-panel.visible { display: block; }
+  .check-ok { color: var(--green); font-weight: 600; }
+  .check-err { color: var(--accent2); }
+  .check-summary { font-weight: 700; margin-bottom: 6px; }
+  .check-panel code {
+    background: var(--surface2); padding: 1px 5px; border-radius: 4px;
+    font-family: var(--font-mono); font-size: .78rem; color: #c792ea;
+  }
+
+  .explain-panel {
+    background: #13102a; border-bottom: 1px solid var(--border);
+    padding: 12px 20px; font-size: .82rem; color: #c4b5fd;
+    display: none; line-height: 1.9;
+  }
+  .explain-panel.visible { display: block; }
+  .explain-panel strong { color: #e9d5ff; }
+  .explain-panel em { color: #a78bfa; font-style: normal; font-weight: 600; }
+  .explain-panel code {
+    background: var(--surface2); padding: 1px 5px; border-radius: 4px;
+    font-family: var(--font-mono); font-size: .78rem; color: #7dd3fc;
+  }
+  .explain-panel .prop-line { margin-bottom: 2px; }
+  .explain-note {
+    margin-top: 8px; padding: 6px 10px;
+    background: #1e1645; border-left: 3px solid #7c3aed;
+    border-radius: 0 4px 4px 0; font-size: .78rem; color: #a78bfa;
+  }
+
+  .workspace { flex: 1; display: flex; overflow: hidden; }
+
+  .editor-pane {
+    width: 45%; flex-shrink: 0;
+    display: flex; flex-direction: column;
+    border-right: 1px solid var(--border);
+  }
+  .tabs {
+    display: flex; background: var(--surface);
+    border-bottom: 1px solid var(--border); flex-shrink: 0;
+  }
+  .tab {
+    padding: 8px 16px; font-size: .78rem; font-weight: 600;
+    cursor: pointer; color: var(--text-muted);
+    border-bottom: 2px solid transparent; transition: color .15s;
+  }
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+  .tab-hint {
+    font-size: .65rem; color: var(--text-muted);
+    padding: 8px 12px 8px 0; margin-left: auto; font-style: italic;
+  }
+  .editor-wrap { flex: 1; overflow: hidden; }
+  textarea {
+    width: 100%; height: 100%;
+    background: #0d1117; color: #e2e8f0;
+    border: none; padding: 14px 16px;
+    font-family: var(--font-mono); font-size: .82rem; line-height: 1.6;
+    resize: none; outline: none; tab-size: 2;
+  }
+
+  .preview-pane { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+  .preview-header {
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 14px; background: var(--surface);
+    border-bottom: 1px solid var(--border); flex-shrink: 0;
+  }
+  .preview-dot { width: 10px; height: 10px; border-radius: 50%; }
+  .preview-header span { font-size: .72rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase; }
+  .btn-run { margin-left: auto; background: var(--accent); color: #fff; padding: 5px 14px; }
+  iframe { flex: 1; border: none; background: #fff; }
+
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  @media print {
+    body > *:not(#cheatOverlay) { display: none !important; }
+    #cheatOverlay { display: block !important; position: static !important; background: #fff !important; color: #000 !important; overflow: visible !important; height: auto !important; }
+    .cheat-inner { overflow: visible !important; height: auto !important; }
+    .cheat-header { position: static !important; background: #fff !important; border-bottom: 2px solid #000 !important; }
+    .btn-close-cheat { display: none !important; }
+    .cheat-h2 { color: #000 !important; border-color: #000 !important; }
+    .cheat-h2::before { background: #000 !important; }
+    .cheat-table th { background: #eee !important; color: #000 !important; }
+    .cheat-table td { color: #222 !important; border-color: #ddd !important; }
+    .ct-prop { color: #3730a3 !important; }
+    .ct-vals code, .ft-exp code, code { background: #f0f0f0 !important; color: #c2410c !important; }
+    .vis-track { background: #f5f5f5 !important; border-color: #ccc !important; }
+    .vis-box:nth-child(1) { background: #6c63ff !important; }
+    .vis-box:nth-child(2) { background: #a78bfa !important; }
+    .vis-box:nth-child(3) { background: #4fc3f7 !important; }
+    .pattern-card { background: #f9f9f9 !important; border-color: #ddd !important; break-inside: avoid; }
+    .gotcha-card { background: #fff5f5 !important; border-color: #fca5a5 !important; break-inside: avoid; }
+    .gotcha-title { color: #dc2626 !important; }
+    .pattern-title { color: #16a34a !important; }
+    .pc { color: #0369a1 !important; }
+    .vc { color: #b45309 !important; }
+    .sc { color: #be185d !important; }
+    .axis-wrap { background: #f5f5f5 !important; border-color: #ccc !important; }
+    .tag-cont { background: #ede9fe !important; color: #5b21b6 !important; border-color: #8b5cf6 !important; }
+    .tag-item { background: #dcfce7 !important; color: #15803d !important; border-color: #4ade80 !important; }
+    .cheat-section { break-inside: avoid; page-break-inside: avoid; }
+    .ft-short { color: #92400e !important; }
+  }
+
+  /* ─── ANIMATIONS ─── */
+  @keyframes fadeIn  { from{opacity:0}       to{opacity:1} }
+  @keyframes cardPop { from{transform:scale(.35);opacity:0} to{transform:scale(1);opacity:1} }
+  @keyframes trophyFloat { 0%,100%{transform:translateY(0) rotate(-7deg)} 50%{transform:translateY(-16px) rotate(7deg)} }
+  @keyframes shimmer { 0%,100%{background-position:0% 50%} 50%{background-position:100% 50%} }
+  @keyframes starPop { from{transform:scale(0);opacity:0} 60%{transform:scale(1.3)} to{transform:scale(1);opacity:1} }
+
+  /* ─── CELEBRATION ─── */
+  #celebOverlay {
+    position:fixed;inset:0;z-index:9000;display:flex;
+    align-items:center;justify-content:center;
+    background:rgba(0,0,0,.78);backdrop-filter:blur(8px);
+    animation:fadeIn .3s;
+  }
+  #confettiCanvas { position:fixed;inset:0;pointer-events:none;z-index:9001; }
+  .celeb-card {
+    position:relative;z-index:9002;
+    background:linear-gradient(145deg,#1a1d27,#13102a);
+    border:1px solid rgba(108,99,255,.55);border-radius:22px;
+    padding:42px 36px;text-align:center;max-width:460px;width:92%;
+    box-shadow:0 0 80px rgba(108,99,255,.28),0 0 160px rgba(108,99,255,.12);
+    animation:cardPop .45s cubic-bezier(.175,.885,.32,1.275);
+  }
+  .celeb-stars { display:flex;justify-content:center;gap:8px;margin-bottom:6px; }
+  .celeb-star  { font-size:1.4rem;animation:starPop .4s cubic-bezier(.175,.885,.32,1.275) both; }
+  .celeb-star:nth-child(1){animation-delay:.1s}
+  .celeb-star:nth-child(2){animation-delay:.22s}
+  .celeb-star:nth-child(3){animation-delay:.34s}
+  .celeb-trophy { font-size:5rem;line-height:1;display:inline-block;animation:trophyFloat 2.2s ease-in-out infinite;margin-bottom:10px; }
+  .celeb-title {
+    font-size:1.55rem;font-weight:900;letter-spacing:2.5px;text-transform:uppercase;margin:6px 0 2px;
+    background:linear-gradient(90deg,#a78bfa,#6c63ff,#4fc3f7,#a78bfa);background-size:300% 300%;
+    -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
+    animation:shimmer 3s ease infinite;
+  }
+  .celeb-sub { color:#7b85a5;font-size:.83rem;margin-bottom:18px;line-height:1.6; }
+  .celeb-stats { display:flex;gap:10px;justify-content:center;margin:18px 0; }
+  .celeb-stat { background:rgba(108,99,255,.12);border:1px solid rgba(108,99,255,.3);border-radius:10px;padding:12px 16px;flex:1; }
+  .celeb-stat .num { font-size:1.7rem;font-weight:900;color:#a78bfa;display:block; }
+  .celeb-stat .lbl { font-size:.6rem;color:#7b85a5;text-transform:uppercase;letter-spacing:1px; }
+  .celeb-btns { display:flex;flex-direction:column;gap:10px;margin-top:24px; }
+  .btn-open-synth {
+    background:linear-gradient(90deg,#6c63ff,#a78bfa);color:#fff;border:none;border-radius:10px;
+    padding:13px 20px;font-size:.9rem;font-weight:700;cursor:pointer;letter-spacing:.5px;
+    transition:transform .15s,box-shadow .15s;
+  }
+  .btn-open-synth:hover { transform:translateY(-2px);box-shadow:0 10px 30px rgba(108,99,255,.45); }
+  .btn-celeb-close { background:transparent;color:#7b85a5;border:1px solid #2e3350;border-radius:10px;padding:10px;font-size:.82rem;cursor:pointer; }
+  .btn-celeb-close:hover { color:#e2e8f0;border-color:#7b85a5; }
+  .btn-hdr-synth {
+    background:linear-gradient(90deg,#6c63ff,#a78bfa);color:#fff;border:none;border-radius:6px;
+    font-size:.7rem;font-weight:700;padding:5px 12px;cursor:pointer;letter-spacing:.5px;
+    display:none;transition:opacity .15s,transform .15s;
+  }
+  .btn-hdr-synth:hover { opacity:.85;transform:translateY(-1px); }
+
+  /* ─── CHEAT SHEET ─── */
+  #cheatOverlay {
+    position:fixed;inset:0;z-index:9500;background:#0a0d14;
+    overflow-y:auto;animation:fadeIn .25s;display:none;
+  }
+  #cheatOverlay.open { display:block; }
+  .cheat-inner { max-width:1080px;margin:0 auto;padding:0 24px 80px; }
+  .cheat-header {
+    position:sticky;top:0;z-index:10;background:#0a0d14;
+    border-bottom:1px solid #2e3350;padding:14px 0;
+    display:flex;align-items:center;justify-content:space-between;margin-bottom:40px;
+  }
+  .cheat-header h1 { font-size:1rem;font-weight:800;color:#e2e8f0;letter-spacing:.5px; }
+  .cheat-header h1 em { font-style:normal;color:#6c63ff; }
+  .btn-close-cheat { background:#1a1d27;border:1px solid #2e3350;color:#7b85a5;border-radius:6px;padding:6px 16px;font-size:.78rem;font-weight:600;cursor:pointer; }
+  .btn-close-cheat:hover { color:#e2e8f0;border-color:#7b85a5; }
+  .cheat-cols { display:grid;grid-template-columns:1fr 1fr;gap:24px; }
+  @media(max-width:680px){ .cheat-cols{grid-template-columns:1fr} }
+  .cheat-section { margin-bottom:52px; }
+  .cheat-h2 {
+    font-size:.7rem;font-weight:800;letter-spacing:2px;text-transform:uppercase;
+    color:#6c63ff;border-bottom:1px solid #2e3350;padding-bottom:8px;margin-bottom:20px;
+    display:flex;align-items:center;gap:8px;
+  }
+  .cheat-h2::before { content:'';flex:none;width:3px;height:14px;background:#6c63ff;border-radius:2px; }
+  .cheat-table { width:100%;border-collapse:collapse;font-size:.8rem; }
+  .cheat-table th { text-align:left;padding:7px 10px;background:#1a1d27;color:#7b85a5;font-size:.63rem;text-transform:uppercase;letter-spacing:1px;font-weight:700;border-bottom:1px solid #2e3350; }
+  .cheat-table td { padding:8px 10px;border-bottom:1px solid #151825;vertical-align:top;color:#c4cde8;line-height:1.6; }
+  .cheat-table tr:hover td { background:#1a1d27; }
+  .ct-prop { color:#a78bfa;font-family:var(--font-mono);font-weight:600;white-space:nowrap; }
+  .ct-vals code { font-family:var(--font-mono);font-size:.74rem;color:#7dd3fc;background:#1e2235;padding:1px 4px;border-radius:3px;white-space:nowrap; }
+  .ct-default { font-size:.67rem;color:#43d98c;font-style:italic;margin-top:2px; }
+  .ct-desc { color:#9aa3be;font-size:.78rem; }
+  .vis-grid { display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px; }
+  .vis-item { background:#1a1d27;border:1px solid #2e3350;border-radius:8px;padding:10px; }
+  .vis-label { font-family:var(--font-mono);font-size:.7rem;color:#a78bfa;margin-bottom:7px;font-weight:600; }
+  .vis-track { background:#0d1117;border:1px solid #2e3350;border-radius:4px;height:42px;display:flex;align-items:center;padding:4px; }
+  .vis-track.col { flex-direction:column;height:100px;width:42px;align-items:stretch;padding:4px; }
+  .vis-box { width:22px;height:28px;border-radius:3px;flex-shrink:0; }
+  .vis-box.s { height:18px; }
+  .vis-box.t { height:36px; }
+  .vis-box:nth-child(1){background:#6c63ff}
+  .vis-box:nth-child(2){background:#a78bfa}
+  .vis-box:nth-child(3){background:#4fc3f7}
+  .pattern-grid { display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px; }
+  .pattern-card { background:#1a1d27;border:1px solid #2e3350;border-radius:10px;padding:16px; }
+  .pattern-title { font-size:.8rem;font-weight:700;color:#43d98c;margin-bottom:3px; }
+  .pattern-use { font-size:.7rem;color:#7b85a5;font-style:italic;margin-bottom:10px; }
+  .pattern-code { font-family:var(--font-mono);font-size:.73rem;color:#c4cde8;line-height:1.8;white-space:pre; }
+  .pc{color:#7dd3fc}.vc{color:#ffd166}.sc{color:#ff6584}.cm{color:#556070;font-style:italic}
+  .gotcha-grid { display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px; }
+  .gotcha-card { background:rgba(255,101,132,.07);border:1px solid rgba(255,101,132,.22);border-radius:8px;padding:14px; }
+  .gotcha-title { color:#ff6584;font-weight:700;font-size:.8rem;margin-bottom:6px; }
+  .gotcha-card p { font-size:.77rem;color:#a0aec0;line-height:1.65;margin:4px 0; }
+  .gotcha-card code { font-family:var(--font-mono);font-size:.72rem;color:#7dd3fc;background:#1e2235;padding:1px 4px;border-radius:3px; }
+  .flex-table { width:100%;border-collapse:collapse;font-size:.8rem; }
+  .flex-table th { background:#1a1d27;color:#7b85a5;padding:7px 10px;text-align:left;font-size:.63rem;text-transform:uppercase;letter-spacing:1px;border-bottom:1px solid #2e3350; }
+  .flex-table td { padding:8px 10px;border-bottom:1px solid #151825;vertical-align:middle; }
+  .flex-table tr:hover td { background:#1a1d27; }
+  .ft-short{color:#ffd166;font-family:var(--font-mono);font-weight:600}
+  .ft-exp{color:#9aa3be;font-size:.73rem}
+  .ft-exp code{font-family:var(--font-mono);color:#7dd3fc;background:#1e2235;padding:1px 4px;border-radius:3px}
+  .ft-note{color:#a0aec0;font-size:.75rem}
+  .axis-wrap { background:#1a1d27;border:1px solid #2e3350;border-radius:10px;padding:24px;display:flex;gap:32px;flex-wrap:wrap;align-items:flex-start; }
+  .axis-diagram { position:relative;width:200px;height:120px;border:2px dashed #2e3350;border-radius:6px;flex-shrink:0;display:flex;align-items:center;justify-content:center; }
+  .axis-arrow-h { position:absolute;bottom:-26px;left:0;right:0;display:flex;align-items:center;justify-content:space-between;font-size:.68rem;font-weight:700;color:#6c63ff; }
+  .axis-arrow-v { position:absolute;right:-66px;top:0;bottom:0;display:flex;flex-direction:column;align-items:center;justify-content:space-between;font-size:.68rem;font-weight:700;color:#ff6584; }
+  .axis-note { font-size:.75rem;color:#9aa3be;line-height:1.8;flex:1;min-width:200px; }
+  .axis-note strong { color:#e2e8f0; }
+  .axis-center { font-size:.65rem;color:#7b85a5;text-align:center; }
+  .tag-row { display:flex;flex-wrap:wrap;gap:6px;margin-top:8px; }
+  .tag { font-size:.68rem;padding:2px 8px;border-radius:99px;font-weight:600; }
+  .tag-cont { background:rgba(108,99,255,.18);color:#a78bfa;border:1px solid rgba(108,99,255,.3); }
+  .tag-item { background:rgba(67,217,140,.15);color:#43d98c;border:1px solid rgba(67,217,140,.3); }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Flex<span>box</span> Sandbox</h1>
+  <div class="progress-bar-wrap">
+    <div class="progress-bar-fill" id="progressFill" style="width:0%"></div>
+  </div>
+  <span class="progress-label" id="progressLabel">0 / 20</span>
+</header>
+
+<div class="app">
+  <aside class="sidebar" id="sidebar"></aside>
+
+  <div class="main">
+    <div class="desc-bar">
+      <div class="desc-content">
+        <h2><span class="exo-badge" id="exoBadge"></span><span id="exoTitle"></span></h2>
+        <p id="exoDesc"></p>
+      </div>
+      <div class="desc-actions">
+        <button class="btn-nav" id="btnPrev" onclick="navigate(-1)">&#9664;</button>
+        <button class="btn-hint" onclick="toggleHint()">Indice</button>
+        <button class="btn-solution" onclick="showSolution()">Solution</button>
+        <button class="btn-check" onclick="checkAnswer()">&#10003; Verifier</button>
+        <button class="btn-explain" id="btnExplain" onclick="toggleExplain()">Explication</button>
+        <button class="btn-reset" onclick="resetCode()">Reset</button>
+        <button class="btn-done" onclick="markDone()">&#10003; Fait</button>
+        <button class="btn-nav" id="btnNext" onclick="navigate(1)">&#9654;</button>
+      </div>
+    </div>
+
+    <div class="hint-panel" id="hintPanel"></div>
+    <div class="check-panel" id="checkPanel"></div>
+    <div class="explain-panel" id="explainPanel"></div>
+
+    <div class="workspace">
+      <div class="editor-pane">
+        <div class="tabs">
+          <div class="tab active" id="tabHTML" onclick="switchTab('html')">HTML</div>
+          <div class="tab" id="tabCSS" onclick="switchTab('css')">CSS</div>
+          <span class="tab-hint">Tab = indenter &nbsp;|&nbsp; Ctrl+Enter = Run</span>
+        </div>
+        <div class="editor-wrap">
+          <textarea id="editorHTML" spellcheck="false" oninput="autoRun()"></textarea>
+          <textarea id="editorCSS" spellcheck="false" oninput="autoRun()" style="display:none"></textarea>
+        </div>
+      </div>
+
+      <div class="preview-pane">
+        <div class="preview-header">
+          <div class="preview-dot" style="background:#ff5f57"></div>
+          <div class="preview-dot" style="background:#ffbd2e"></div>
+          <div class="preview-dot" style="background:#28c840"></div>
+          <span>Preview</span>
+          <button class="btn-run" onclick="runCode()">&#9654; Run</button>
+        </div>
+        <iframe id="preview"></iframe>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function() {
+
+var EX = [
+  // --- NIVEAU 1 ---
+  {
+    lv:1, title:"Centrer un bloc",
+    desc:"Le bloc violet doit apparaitre au centre exact de la page — horizontalement ET verticalement. Modifie uniquement .container (3 proprietes a ajouter).",
+    hint:"Le <strong>conteneur</strong> doit etre flex. Utilise <code>justify-content</code> et <code>align-items</code> ensemble.",
+    html:'<div class="container">\n  <div class="box">Centre-moi</div>\n</div>',
+    css:'.container {\n  width: 100%;\n  height: 100vh;\n  background: #f0f4ff;\n  /* Ton code ici */\n}\n\n/* .box : ne pas modifier — juste le style du bloc */\n.box {\n  width: 150px;\n  height: 150px;\n  background: #6c63ff;\n  color: white;\n  border-radius: 8px;\n  text-align: center;\n  line-height: 150px;\n}',
+    sol:'.container {\n  width: 100%;\n  height: 100vh;\n  background: #f0f4ff;\n  display: flex;\n  justify-content: center;\n  align-items: center;\n}\n\n.box {\n  width: 150px;\n  height: 150px;\n  background: #6c63ff;\n  color: white;\n  border-radius: 8px;\n  text-align: center;\n  line-height: 150px;\n}'
+  },
+  {
+    lv:1, title:"3 elements en ligne, a gauche",
+    desc:"Aligne 3 boites cote a cote, alignees a gauche du conteneur. Modifie uniquement .container.",
+    hint:"Par defaut flex aligne deja en ligne. La direction est <code>row</code> par defaut.",
+    html:'<div class="container">\n  <div class="box">A</div>\n  <div class="box">B</div>\n  <div class="box">C</div>\n</div>',
+    css:'.container {\n  width: 100%;\n  height: 100vh;\n  background: #f0f4ff;\n  padding: 20px;\n  /* Ton code ici */\n}\n\n/* .box : ne pas modifier — juste le style du bloc */\n.box {\n  width: 80px;\n  height: 80px;\n  background: #6c63ff;\n  color: white;\n  border-radius: 6px;\n  font-weight: bold;\n  text-align: center;\n  line-height: 80px;\n}',
+    sol:'.container {\n  width: 100%;\n  height: 100vh;\n  background: #f0f4ff;\n  padding: 20px;\n  display: flex;\n  align-items: flex-start;\n  gap: 12px;\n}\n\n/* .box : ne pas modifier — juste le style du bloc */\n.box {\n  width: 80px;\n  height: 80px;\n  background: #6c63ff;\n  color: white;\n  border-radius: 6px;\n  font-weight: bold;\n  text-align: center;\n  line-height: 80px;\n}'
+  },
+  {
+    lv:1, title:"Espace egal entre 3 elements",
+    desc:"Repartis 3 boites avec un espace egal entre elles sur toute la largeur. Modifie uniquement .container.",
+    hint:"Essaie <code>justify-content: space-between</code> ou <code>space-around</code> - quelle difference ?",
+    html:'<div class="container">\n  <div class="box">1</div>\n  <div class="box">2</div>\n  <div class="box">3</div>\n</div>',
+    css:'.container {\n  width: 100%;\n  padding: 20px;\n  background: #f0f4ff;\n  /* Ton code ici */\n}\n\n/* .box : ne pas modifier — juste le style du bloc */\n.box {\n  width: 80px;\n  height: 80px;\n  background: #43d98c;\n  color: white;\n  border-radius: 6px;\n  font-size: 1.5rem;\n  font-weight: bold;\n  text-align: center;\n  line-height: 80px;\n}',
+    sol:'.container {\n  width: 100%;\n  padding: 20px;\n  background: #f0f4ff;\n  display: flex;\n  justify-content: space-between;\n}\n\n/* .box : ne pas modifier — juste le style du bloc */\n.box {\n  width: 80px;\n  height: 80px;\n  background: #43d98c;\n  color: white;\n  border-radius: 6px;\n  font-size: 1.5rem;\n  font-weight: bold;\n  text-align: center;\n  line-height: 80px;\n}'
+  },
+  {
+    lv:1, title:"3 elements en colonne",
+    desc:"Mets 3 boites les unes sous les autres (en colonne) avec un espace entre elles. Modifie uniquement .container.",
+    hint:"<code>flex-direction: column</code> change l&#39;axe principal. <code>justify-content</code> s&#39;applique alors sur l&#39;axe vertical.",
+    html:'<div class="container">\n  <div class="box">Haut</div>\n  <div class="box">Milieu</div>\n  <div class="box">Bas</div>\n</div>',
+    css:'.container {\n  width: 100%;\n  height: 100vh;\n  background: #f0f4ff;\n  padding: 20px;\n  /* Ton code ici */\n}\n\n/* .box : ne pas modifier — juste le style du bloc */\n.box {\n  width: 120px;\n  height: 60px;\n  background: #ff6584;\n  color: white;\n  border-radius: 6px;\n  font-weight: bold;\n  text-align: center;\n  line-height: 60px;\n}',
+    sol:'.container {\n  width: 100%;\n  height: 100vh;\n  background: #f0f4ff;\n  padding: 20px;\n  display: flex;\n  flex-direction: column;\n  gap: 12px;\n}\n\n/* .box : ne pas modifier — juste le style du bloc */\n.box {\n  width: 120px;\n  height: 60px;\n  background: #ff6584;\n  color: white;\n  border-radius: 6px;\n  font-weight: bold;\n  text-align: center;\n  line-height: 60px;\n}'
+  },
+  {
+    lv:1, title:"Centrage parfait",
+    desc:"Centre un contenu (titre + bouton) au milieu exact de la page, en colonne.",
+    hint:"<code>flex-direction: column</code> + <code>justify-content: center</code> + <code>align-items: center</code>. Un classique !",
+    html:'<div class="container">\n  <h1>Bonjour !</h1>\n  <button>Commencer</button>\n</div>',
+    css:'.container {\n  width: 100%;\n  height: 100vh;\n  background: linear-gradient(135deg, #667eea, #764ba2);\n  /* Ton code ici */\n}\n\nh1 {\n  color: white;\n  margin-bottom: 20px;\n  font-size: 2rem;\n}\n\nbutton {\n  background: white;\n  color: #764ba2;\n  border: none;\n  padding: 12px 32px;\n  border-radius: 99px;\n  font-size: 1rem;\n  font-weight: bold;\n  cursor: pointer;\n}',
+    sol:'.container {\n  width: 100%;\n  height: 100vh;\n  background: linear-gradient(135deg, #667eea, #764ba2);\n  display: flex;\n  flex-direction: column;\n  justify-content: center;\n  align-items: center;\n}\n\nh1 {\n  color: white;\n  margin-bottom: 20px;\n  font-size: 2rem;\n}\n\nbutton {\n  background: white;\n  color: #764ba2;\n  border: none;\n  padding: 12px 32px;\n  border-radius: 99px;\n  font-size: 1rem;\n  font-weight: bold;\n  cursor: pointer;\n}'
+  },
+  // --- NIVEAU 2 ---
+  {
+    lv:2, title:"Barre de navigation",
+    desc:"Cree une navbar avec le logo a gauche et les liens a droite, alignes verticalement au centre.",
+    hint:"<code>justify-content: space-between</code> pousse le logo a gauche et les liens a droite. <code>align-items: center</code> pour l&#39;alignement vertical.",
+    html:'<nav class="navbar">\n  <div class="logo">MonSite</div>\n  <ul class="links">\n    <li><a href="#">Accueil</a></li>\n    <li><a href="#">A propos</a></li>\n    <li><a href="#">Contact</a></li>\n  </ul>\n</nav>',
+    css:'.navbar {\n  padding: 0 24px;\n  height: 60px;\n  background: #1a1d27;\n  /* Ton code ici */\n}\n\n.logo {\n  color: #6c63ff;\n  font-weight: 800;\n  font-size: 1.2rem;\n}\n\n/* .links : déjà configuré — ton travail est sur .navbar */\n.links {\n  list-style: none;\n  display: flex;\n  gap: 24px;\n}\n\n.links a {\n  color: #a0aec0;\n  text-decoration: none;\n  font-size: .9rem;\n}',
+    sol:'.navbar {\n  padding: 0 24px;\n  height: 60px;\n  background: #1a1d27;\n  display: flex;\n  justify-content: space-between;\n  align-items: center;\n}\n\n.logo {\n  color: #6c63ff;\n  font-weight: 800;\n  font-size: 1.2rem;\n}\n\n/* .links : déjà configuré — ton travail est sur .navbar */\n.links {\n  list-style: none;\n  display: flex;\n  gap: 24px;\n}\n\n.links a {\n  color: #a0aec0;\n  text-decoration: none;\n  font-size: .9rem;\n}'
+  },
+  {
+    lv:2, title:"Header avec bouton a droite",
+    desc:"Cree un header avec un titre et un bouton 'Se connecter' colle a droite.",
+    hint:"Utilise <code>flex: 1</code> sur le titre pour qu&#39;il prenne tout l&#39;espace, ou <code>margin-left: auto</code> sur le bouton.",
+    html:'<header class="header">\n  <h1>Mon App</h1>\n  <button>Se connecter</button>\n</header>\n<main style="padding:20px;background:#f0f4ff;min-height:calc(100vh - 60px)">\n  <p>Contenu de la page...</p>\n</main>',
+    css:'.header {\n  height: 60px;\n  padding: 0 24px;\n  background: white;\n  border-bottom: 1px solid #e2e8f0;\n  /* Ton code ici */\n}\n\n.header h1 {\n  font-size: 1.1rem;\n  color: #2d3748;\n}\n\n.header button {\n  background: #6c63ff;\n  color: white;\n  border: none;\n  padding: 8px 20px;\n  border-radius: 6px;\n  font-weight: 600;\n  cursor: pointer;\n}',
+    sol:'.header {\n  height: 60px;\n  padding: 0 24px;\n  background: white;\n  border-bottom: 1px solid #e2e8f0;\n  display: flex;\n  align-items: center;\n}\n\n.header h1 {\n  font-size: 1.1rem;\n  color: #2d3748;\n  flex: 1;\n}\n\n.header button {\n  background: #6c63ff;\n  color: white;\n  border: none;\n  padding: 8px 20px;\n  border-radius: 6px;\n  font-weight: 600;\n  cursor: pointer;\n}'
+  },
+  {
+    lv:2, title:"3 cartes de hauteurs differentes",
+    desc:"Aligne 3 cartes avec des hauteurs differentes. Elles doivent etre alignees en haut (pas etirees).",
+    hint:"Par defaut <code>align-items: stretch</code> etire les enfants. Change-le en <code>flex-start</code>.",
+    html:'<div class="container">\n  <div class="card" style="height:120px">Carte courte</div>\n  <div class="card" style="height:200px">Carte haute</div>\n  <div class="card" style="height:160px">Carte moyenne</div>\n</div>',
+    css:'.container {\n  padding: 20px;\n  background: #f0f4ff;\n  min-height: 100vh;\n  /* Ton code ici */\n}\n\n.card {\n  width: 160px;\n  background: white;\n  border-radius: 10px;\n  padding: 16px;\n  box-shadow: 0 2px 8px rgba(0,0,0,.1);\n  font-weight: 600;\n  color: #2d3748;\n}',
+    sol:'.container {\n  padding: 20px;\n  background: #f0f4ff;\n  min-height: 100vh;\n  display: flex;\n  align-items: flex-start;\n  gap: 16px;\n}\n\n.card {\n  width: 160px;\n  background: white;\n  border-radius: 10px;\n  padding: 16px;\n  box-shadow: 0 2px 8px rgba(0,0,0,.1);\n  font-weight: 600;\n  color: #2d3748;\n}'
+  },
+  {
+    lv:2, title:"Texte en haut, bouton en bas",
+    desc:"Dans une boite fixe (300x180px), place le titre en haut et le bouton en bas a droite.",
+    hint:"<code>flex-direction: column</code> + <code>justify-content: space-between</code>. Pour le bouton a droite : <code>align-self: flex-end</code>.",
+    html:'<div class="card">\n  <h2>Titre de la carte</h2>\n  <button>Voir plus</button>\n</div>',
+    css:'.card {\n  width: 300px;\n  height: 180px;\n  background: linear-gradient(135deg, #667eea, #764ba2);\n  border-radius: 12px;\n  padding: 20px;\n  margin: 40px auto;\n  /* Ton code ici */\n}\n\n.card h2 {\n  color: white;\n  font-size: 1rem;\n}\n\n.card button {\n  background: white;\n  color: #764ba2;\n  border: none;\n  padding: 8px 16px;\n  border-radius: 6px;\n  font-weight: bold;\n  cursor: pointer;\n}',
+    sol:'.card {\n  width: 300px;\n  height: 180px;\n  background: linear-gradient(135deg, #667eea, #764ba2);\n  border-radius: 12px;\n  padding: 20px;\n  margin: 40px auto;\n  display: flex;\n  flex-direction: column;\n  justify-content: space-between;\n}\n\n.card h2 {\n  color: white;\n  font-size: 1rem;\n}\n\n.card button {\n  background: white;\n  color: #764ba2;\n  border: none;\n  padding: 8px 16px;\n  border-radius: 6px;\n  font-weight: bold;\n  cursor: pointer;\n  align-self: flex-end;\n}'
+  },
+  {
+    lv:2, title:"Footer avec 3 blocs",
+    desc:"Cree un footer avec 3 blocs : logo a gauche, liens au centre, copyright a droite. Tout aligne verticalement.",
+    hint:"<code>justify-content: space-between</code> + <code>align-items: center</code>.",
+    html:'<footer class="footer">\n  <div class="footer-logo">MonSite</div>\n  <nav class="footer-links">\n    <a href="#">Mentions</a>\n    <a href="#">Contact</a>\n  </nav>\n  <div class="footer-copy">2026</div>\n</footer>',
+    css:'.footer {\n  width: 100%;\n  height: 60px;\n  padding: 0 32px;\n  background: #1a1d27;\n  /* Ton code ici */\n}\n\n.footer-logo { color: #6c63ff; font-weight: 800; }\n\n/* .footer-links : déjà configuré — ton travail est sur .footer */\n.footer-links {\n  display: flex;\n  gap: 20px;\n}\n\n.footer-links a {\n  color: #7b85a5;\n  text-decoration: none;\n  font-size: .82rem;\n}\n\n.footer-copy { color: #7b85a5; font-size: .78rem; }',
+    sol:'.footer {\n  width: 100%;\n  height: 60px;\n  padding: 0 32px;\n  background: #1a1d27;\n  display: flex;\n  justify-content: space-between;\n  align-items: center;\n}\n\n.footer-logo { color: #6c63ff; font-weight: 800; }\n\n/* .footer-links : déjà configuré — ton travail est sur .footer */\n.footer-links {\n  display: flex;\n  gap: 20px;\n}\n\n.footer-links a {\n  color: #7b85a5;\n  text-decoration: none;\n  font-size: .82rem;\n}\n\n.footer-copy { color: #7b85a5; font-size: .78rem; }'
+  },
+  // --- NIVEAU 3 ---
+  {
+    lv:3, title:"4 cartes sur toute la largeur",
+    desc:"Fais en sorte que 4 cartes se partagent equitablement toute la largeur du conteneur.",
+    hint:"<code>flex: 1</code> sur chaque carte leur permet de grandir pour remplir l&#39;espace disponible.",
+    html:'<div class="container">\n  <div class="card">Carte 1</div>\n  <div class="card">Carte 2</div>\n  <div class="card">Carte 3</div>\n  <div class="card">Carte 4</div>\n</div>',
+    css:'.container {\n  padding: 20px;\n  background: #f0f4ff;\n  min-height: 100vh;\n  /* Ton code ici */\n}\n\n.card {\n  min-height: 120px;\n  background: white;\n  border-radius: 10px;\n  padding: 20px;\n  box-shadow: 0 2px 8px rgba(0,0,0,.08);\n  font-weight: 600;\n  color: #2d3748;\n  /* Ton code ici */\n}',
+    sol:'.container {\n  padding: 20px;\n  background: #f0f4ff;\n  min-height: 100vh;\n  display: flex;\n  gap: 16px;\n}\n\n.card {\n  flex: 1;\n  min-height: 120px;\n  background: white;\n  border-radius: 10px;\n  padding: 20px;\n  box-shadow: 0 2px 8px rgba(0,0,0,.08);\n  font-weight: 600;\n  color: #2d3748;\n}'
+  },
+  {
+    lv:3, title:"Un element prend tout l'espace",
+    desc:"Une barre : bouton a gauche, champ de recherche qui prend tout l'espace restant, bouton a droite.",
+    hint:"<code>flex: 1</code> sur l&#39;input lui fait prendre tout l&#39;espace restant apres les boutons fixes.",
+    html:'<div class="searchbar">\n  <button class="btn-icon">Menu</button>\n  <input type="text" placeholder="Rechercher...">\n  <button class="btn-search">Chercher</button>\n</div>',
+    css:'.searchbar {\n  display: flex;\n  padding: 16px;\n  background: #1a1d27;\n  gap: 8px;\n  align-items: center;\n}\n\n.btn-icon {\n  width: 40px;\n  height: 40px;\n  background: #2e3350;\n  color: white;\n  border: none;\n  border-radius: 8px;\n  cursor: pointer;\n  flex-shrink: 0;\n}\n\ninput {\n  height: 40px;\n  padding: 0 14px;\n  border: 1px solid #2e3350;\n  border-radius: 8px;\n  background: #0d1117;\n  color: white;\n  font-size: .9rem;\n  outline: none;\n  /* Ton code ici */\n}\n\n.btn-search {\n  height: 40px;\n  padding: 0 20px;\n  background: #6c63ff;\n  color: white;\n  border: none;\n  border-radius: 8px;\n  font-weight: 600;\n  cursor: pointer;\n  flex-shrink: 0;\n}',
+    sol:'.searchbar {\n  display: flex;\n  padding: 16px;\n  background: #1a1d27;\n  gap: 8px;\n  align-items: center;\n}\n\n.btn-icon {\n  width: 40px;\n  height: 40px;\n  background: #2e3350;\n  color: white;\n  border: none;\n  border-radius: 8px;\n  cursor: pointer;\n  flex-shrink: 0;\n}\n\ninput {\n  height: 40px;\n  padding: 0 14px;\n  border: 1px solid #2e3350;\n  border-radius: 8px;\n  background: #0d1117;\n  color: white;\n  font-size: .9rem;\n  outline: none;\n  flex: 1;\n}\n\n.btn-search {\n  height: 40px;\n  padding: 0 20px;\n  background: #6c63ff;\n  color: white;\n  border: none;\n  border-radius: 8px;\n  font-weight: 600;\n  cursor: pointer;\n  flex-shrink: 0;\n}'
+  },
+  {
+    lv:3, title:"Carte image + texte",
+    desc:"Cree une carte horizontale avec une image a gauche et du texte (titre + description + lien) a droite.",
+    hint:"La carte est un flex container en <code>row</code>. Le bloc texte prend <code>flex: 1</code>. A l&#39;interieur, le bloc texte est aussi flex en <code>column</code>.",
+    html:'<div class="card">\n  <div class="card-img">IMG</div>\n  <div class="card-body">\n    <h3>Titre</h3>\n    <p>Description courte qui resume le contenu.</p>\n    <a href="#">Lire la suite</a>\n  </div>\n</div>',
+    css:'.card {\n  max-width: 500px;\n  margin: 30px auto;\n  background: white;\n  border-radius: 12px;\n  overflow: hidden;\n  box-shadow: 0 4px 16px rgba(0,0,0,.1);\n  /* Ton code ici */\n}\n\n/* .card-img : ne pas modifier */\n.card-img {\n  width: 120px;\n  min-height: 120px;\n  background: #e9ecff;\n  color: #6c63ff;\n  font-weight: bold;\n  flex-shrink: 0;\n  text-align: center;\n  line-height: 120px;\n}\n\n.card-body {\n  padding: 16px;\n  /* Ton code ici */\n}\n\n.card-body h3 { color: #2d3748; margin-bottom: 6px; }\n.card-body p { color: #718096; font-size: .85rem; line-height: 1.5; margin-bottom: 12px; flex: 1; }\n.card-body a { color: #6c63ff; font-size: .85rem; font-weight: 600; text-decoration: none; }',
+    sol:'.card {\n  max-width: 500px;\n  margin: 30px auto;\n  background: white;\n  border-radius: 12px;\n  overflow: hidden;\n  box-shadow: 0 4px 16px rgba(0,0,0,.1);\n  display: flex;\n}\n\n.card-img {\n  width: 120px;\n  min-height: 120px;\n  background: #e9ecff;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  color: #6c63ff;\n  font-weight: bold;\n  flex-shrink: 0;\n}\n\n.card-body {\n  padding: 16px;\n  display: flex;\n  flex-direction: column;\n  flex: 1;\n}\n\n.card-body h3 { color: #2d3748; margin-bottom: 6px; }\n.card-body p { color: #718096; font-size: .85rem; line-height: 1.5; margin-bottom: 12px; flex: 1; }\n.card-body a { color: #6c63ff; font-size: .85rem; font-weight: 600; text-decoration: none; }'
+  },
+  {
+    lv:3, title:"Sidebar + contenu",
+    desc:"Cree un layout : sidebar fixe de 220px a gauche et contenu principal qui prend tout l'espace a droite.",
+    hint:"Le wrapper est flex en <code>row</code>. La sidebar a <code>flex-shrink: 0</code>. Le main prend <code>flex: 1</code>.",
+    html:'<div class="layout">\n  <aside class="sidebar">\n    <h2>Menu</h2>\n    <ul>\n      <li><a href="#">Dashboard</a></li>\n      <li><a href="#">Projets</a></li>\n      <li><a href="#">Parametres</a></li>\n    </ul>\n  </aside>\n  <main class="content">\n    <h1>Bienvenue</h1>\n    <p>Contenu principal ici.</p>\n  </main>\n</div>',
+    css:'.layout {\n  height: 100vh;\n  /* Ton code ici */\n}\n\n.sidebar {\n  width: 220px;\n  background: #1a1d27;\n  padding: 24px 16px;\n  /* Ton code ici */\n}\n\n.sidebar h2 { color: #6c63ff; font-size: .85rem; text-transform: uppercase; margin-bottom: 16px; }\n.sidebar ul { list-style: none; }\n.sidebar ul li { margin-bottom: 8px; }\n.sidebar ul a { color: #7b85a5; text-decoration: none; }\n\n.content {\n  background: #f0f4ff;\n  padding: 32px;\n  /* Ton code ici */\n}\n\n.content h1 { color: #2d3748; margin-bottom: 12px; }\n.content p { color: #718096; }',
+    sol:'.layout {\n  height: 100vh;\n  display: flex;\n}\n\n.sidebar {\n  width: 220px;\n  background: #1a1d27;\n  padding: 24px 16px;\n  flex-shrink: 0;\n}\n\n.sidebar h2 { color: #6c63ff; font-size: .85rem; text-transform: uppercase; margin-bottom: 16px; }\n.sidebar ul { list-style: none; }\n.sidebar ul li { margin-bottom: 8px; }\n.sidebar ul a { color: #7b85a5; text-decoration: none; }\n\n.content {\n  background: #f0f4ff;\n  padding: 32px;\n  flex: 1;\n  overflow-y: auto;\n}\n\n.content h1 { color: #2d3748; margin-bottom: 12px; }\n.content p { color: #718096; }'
+  },
+  {
+    lv:3, title:"Ligne de boutons alignes",
+    desc:"Cree une barre d'actions avec des boutons de tailles differentes, tous alignes par leur bas.",
+    hint:"<code>align-items: flex-end</code> aligne tous les elements sur leur bord bas, peu importe leur hauteur.",
+    html:'<div class="toolbar">\n  <button class="btn-sm">Petit</button>\n  <button class="btn-md">Moyen</button>\n  <button class="btn-lg">Grand bouton</button>\n  <button class="btn-sm">Annuler</button>\n</div>',
+    css:'.toolbar {\n  padding: 20px;\n  background: #f0f4ff;\n  gap: 10px;\n  /* Ton code ici */\n}\n\n.btn-sm { padding: 6px 14px; font-size: .78rem; background: #e2e8f0; border: none; border-radius: 6px; cursor: pointer; }\n.btn-md { padding: 10px 20px; font-size: .9rem; background: #6c63ff; color: white; border: none; border-radius: 6px; cursor: pointer; }\n.btn-lg { padding: 16px 32px; font-size: 1rem; background: #ff6584; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }',
+    sol:'.toolbar {\n  padding: 20px;\n  background: #f0f4ff;\n  gap: 10px;\n  display: flex;\n  align-items: flex-end;\n}\n\n.btn-sm { padding: 6px 14px; font-size: .78rem; background: #e2e8f0; border: none; border-radius: 6px; cursor: pointer; }\n.btn-md { padding: 10px 20px; font-size: .9rem; background: #6c63ff; color: white; border: none; border-radius: 6px; cursor: pointer; }\n.btn-lg { padding: 16px 32px; font-size: 1rem; background: #ff6584; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }'
+  },
+  // --- NIVEAU 4 ---
+  {
+    lv:4, title:"Galerie avec retour a la ligne",
+    desc:"Cree une galerie de cartes qui passe automatiquement a la ligne quand il n'y a plus de place.",
+    hint:"<code>flex-wrap: wrap</code> permet le retour a la ligne. Combine avec <code>flex: 1 1 200px</code>.",
+    html:'<div class="gallery">\n  <div class="item">Montagne</div>\n  <div class="item">Ocean</div>\n  <div class="item">Foret</div>\n  <div class="item">Desert</div>\n  <div class="item">Prairie</div>\n  <div class="item">Arctique</div>\n  <div class="item">Volcan</div>\n  <div class="item">Ile</div>\n</div>',
+    css:'.gallery {\n  padding: 20px;\n  background: #f0f4ff;\n  min-height: 100vh;\n  gap: 16px;\n  /* Ton code ici */\n}\n\n.item {\n  background: white;\n  border-radius: 10px;\n  padding: 24px;\n  font-size: 1.1rem;\n  font-weight: 600;\n  color: #2d3748;\n  box-shadow: 0 2px 8px rgba(0,0,0,.08);\n  /* Ton code ici */\n}',
+    sol:'.gallery {\n  padding: 20px;\n  background: #f0f4ff;\n  min-height: 100vh;\n  gap: 16px;\n  display: flex;\n  flex-wrap: wrap;\n}\n\n.item {\n  background: white;\n  border-radius: 10px;\n  padding: 24px;\n  font-size: 1.1rem;\n  font-weight: 600;\n  color: #2d3748;\n  box-shadow: 0 2px 8px rgba(0,0,0,.08);\n  flex: 1 1 200px;\n}'
+  },
+  {
+    lv:4, title:"Grille de 6 cartes responsive",
+    desc:"Cree une grille responsive de 6 cartes : 3 par ligne sur grand ecran, 2 par ligne sur ecran moyen.",
+    hint:"Donne a chaque carte <code>flex: 1 1 calc(33.33% - 16px)</code>. Sur petit ecran, change la base avec une media query.",
+    html:'<div class="grid">\n  <div class="card">Projet A</div>\n  <div class="card">Projet B</div>\n  <div class="card">Projet C</div>\n  <div class="card">Projet D</div>\n  <div class="card">Projet E</div>\n  <div class="card">Projet F</div>\n</div>',
+    css:'.grid {\n  padding: 20px;\n  background: #f0f4ff;\n  min-height: 100vh;\n  gap: 16px;\n  /* Ton code ici */\n}\n\n.card {\n  background: white;\n  border-radius: 10px;\n  padding: 30px 20px;\n  font-weight: 700;\n  color: #2d3748;\n  text-align: center;\n  box-shadow: 0 2px 8px rgba(0,0,0,.08);\n  /* Ton code ici */\n}\n\n@media (max-width: 600px) {\n  .card {\n    /* Ton code ici */\n  }\n}',
+    sol:'.grid {\n  padding: 20px;\n  background: #f0f4ff;\n  min-height: 100vh;\n  gap: 16px;\n  display: flex;\n  flex-wrap: wrap;\n}\n\n.card {\n  background: white;\n  border-radius: 10px;\n  padding: 30px 20px;\n  font-weight: 700;\n  color: #2d3748;\n  text-align: center;\n  box-shadow: 0 2px 8px rgba(0,0,0,.08);\n  flex: 1 1 calc(33.33% - 16px);\n}\n\n@media (max-width: 600px) {\n  .card {\n    flex: 1 1 calc(50% - 8px);\n  }\n}'
+  },
+  {
+    lv:4, title:"Menu de tags multi-lignes",
+    desc:"Cree un nuage de tags de longueurs differentes qui passent a la ligne naturellement.",
+    hint:"<code>flex-wrap: wrap</code> + <code>gap</code>. Les tags ont une largeur auto pour garder leur taille naturelle.",
+    html:'<div class="tags">\n  <span class="tag">HTML</span>\n  <span class="tag">CSS</span>\n  <span class="tag">Flexbox</span>\n  <span class="tag">Grid Layout</span>\n  <span class="tag">Responsive Design</span>\n  <span class="tag">JavaScript</span>\n  <span class="tag">React</span>\n  <span class="tag">TypeScript</span>\n  <span class="tag">Node.js</span>\n  <span class="tag">Design System</span>\n  <span class="tag">Accessibilite</span>\n  <span class="tag">Performance</span>\n</div>',
+    css:'.tags {\n  padding: 20px;\n  background: #f0f4ff;\n  min-height: 100vh;\n  /* Ton code ici */\n}\n\n.tag {\n  background: white;\n  border: 2px solid #6c63ff;\n  color: #6c63ff;\n  padding: 6px 14px;\n  border-radius: 99px;\n  font-size: .82rem;\n  font-weight: 600;\n  cursor: pointer;\n}\n\n.tag:hover {\n  background: #6c63ff;\n  color: white;\n}',
+    sol:'.tags {\n  padding: 20px;\n  background: #f0f4ff;\n  min-height: 100vh;\n  display: flex;\n  flex-wrap: wrap;\n  gap: 10px;\n  align-content: flex-start;\n}\n\n.tag {\n  background: white;\n  border: 2px solid #6c63ff;\n  color: #6c63ff;\n  padding: 6px 14px;\n  border-radius: 99px;\n  font-size: .82rem;\n  font-weight: 600;\n  cursor: pointer;\n}\n\n.tag:hover {\n  background: #6c63ff;\n  color: white;\n}'
+  },
+  {
+    lv:4, title:"Section temoignages responsive",
+    desc:"3 temoignages cote a cote sur grand ecran, en colonne sur petit ecran. Avec avatar, citation et nom.",
+    hint:"Sur grand ecran : flex row + wrap. Sur petit ecran, les cartes prennent <code>flex: 1 1 100%</code>.",
+    html:'<section class="testimonials">\n  <h2 class="section-title">Ce qu&#39;ils disent</h2>\n  <div class="cards">\n    <div class="card">\n      <div class="avatar">A</div>\n      <p>Flexbox a change ma facon de coder des layouts.</p>\n      <strong>Marie D.</strong>\n    </div>\n    <div class="card">\n      <div class="avatar">B</div>\n      <p>Tellement plus logique quand on comprend les axes !</p>\n      <strong>Theo R.</strong>\n    </div>\n    <div class="card">\n      <div class="avatar">C</div>\n      <p>En 20 exercices, j&#39;ai compris align-items vs justify-content.</p>\n      <strong>Camille B.</strong>\n    </div>\n  </div>\n</section>',
+    css:'body { background: #f0f4ff; }\n.testimonials { padding: 40px 20px; }\n.section-title {\n  text-align: center;\n  color: #2d3748;\n  margin-bottom: 28px;\n  font-size: 1.4rem;\n}\n.cards {\n  /* Ton code ici */\n  gap: 20px;\n}\n.card {\n  background: white;\n  border-radius: 12px;\n  padding: 24px;\n  box-shadow: 0 2px 12px rgba(0,0,0,.08);\n  text-align: center;\n  /* Ton code ici */\n}\n/* .avatar : ne pas modifier */\n.avatar {\n  width: 48px; height: 48px;\n  border-radius: 50%;\n  background: #6c63ff;\n  color: white;\n  font-weight: bold;\n  font-size: 1.2rem;\n  margin: 0 auto 12px;\n  text-align: center;\n  line-height: 48px;\n}\n.card p { color: #718096; font-size: .88rem; line-height: 1.6; margin-bottom: 12px; font-style: italic; }\n.card strong { color: #2d3748; font-size: .85rem; }\n@media (max-width: 580px) {\n  .card { /* Ton code ici */ }\n}',
+    sol:'body { background: #f0f4ff; }\n.testimonials { padding: 40px 20px; }\n.section-title {\n  text-align: center;\n  color: #2d3748;\n  margin-bottom: 28px;\n  font-size: 1.4rem;\n}\n.cards {\n  display: flex;\n  flex-wrap: wrap;\n  gap: 20px;\n}\n.card {\n  background: white;\n  border-radius: 12px;\n  padding: 24px;\n  box-shadow: 0 2px 12px rgba(0,0,0,.08);\n  text-align: center;\n  flex: 1 1 240px;\n}\n.avatar {\n  width: 48px; height: 48px;\n  border-radius: 50%;\n  background: #6c63ff;\n  color: white;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  font-weight: bold;\n  font-size: 1.2rem;\n  margin: 0 auto 12px;\n}\n.card p { color: #718096; font-size: .88rem; line-height: 1.6; margin-bottom: 12px; font-style: italic; }\n.card strong { color: #2d3748; font-size: .85rem; }\n@media (max-width: 580px) {\n  .card { flex: 1 1 100%; }\n}'
+  },
+  {
+    lv:4, title:"Page complete responsive",
+    desc:"Reproduis une page complete : header, section de cartes (flex-wrap), footer. Tout s'adapte a la largeur.",
+    hint:"<code>body</code> en column. Header flex row space-between. Cards en flex-wrap. Footer flex row space-between. <code>flex: 1</code> sur le main.",
+    html:'<div class="page">\n  <header class="header">\n    <div class="logo">FlexPage</div>\n    <nav>\n      <a href="#">Accueil</a>\n      <a href="#">Blog</a>\n      <a href="#">Contact</a>\n    </nav>\n  </header>\n  <main class="main">\n    <h1>Mes projets</h1>\n    <div class="cards">\n      <div class="card">Projet 1</div>\n      <div class="card">Projet 2</div>\n      <div class="card">Projet 3</div>\n      <div class="card">Projet 4</div>\n      <div class="card">Projet 5</div>\n    </div>\n  </main>\n  <footer class="footer">\n    <span>2026 FlexPage</span>\n    <nav>\n      <a href="#">Twitter</a>\n      <a href="#">GitHub</a>\n    </nav>\n  </footer>\n</div>',
+    css:'* { box-sizing: border-box; margin: 0; padding: 0; }\nbody { background: #f0f4ff; }\n.page {\n  min-height: 100vh;\n  /* Ton code ici */\n}\n.header {\n  padding: 0 24px;\n  height: 60px;\n  background: white;\n  border-bottom: 1px solid #e2e8f0;\n  /* Ton code ici */\n}\n.logo { font-weight: 800; color: #6c63ff; }\n/* nav : déjà configuré — ton travail est sur .header et .footer */\n.header nav { display: flex; gap: 20px; }\n.header nav a { color: #718096; text-decoration: none; font-size: .9rem; }\n.main { flex: 1; padding: 40px 24px; }\n.main h1 { color: #2d3748; margin-bottom: 24px; font-size: 1.6rem; }\n.cards {\n  gap: 16px;\n  /* Ton code ici */\n}\n.card {\n  background: white;\n  border-radius: 10px;\n  padding: 28px 20px;\n  font-weight: 700;\n  color: #2d3748;\n  box-shadow: 0 2px 8px rgba(0,0,0,.07);\n  /* Ton code ici */\n}\n.footer {\n  padding: 0 24px;\n  height: 56px;\n  background: #1a1d27;\n  /* Ton code ici */\n}\n.footer span { color: #7b85a5; font-size: .8rem; }\n.footer nav { display: flex; gap: 16px; }\n.footer nav a { color: #7b85a5; text-decoration: none; font-size: .8rem; }',
+    sol:'* { box-sizing: border-box; margin: 0; padding: 0; }\nbody { background: #f0f4ff; }\n.page {\n  min-height: 100vh;\n  display: flex;\n  flex-direction: column;\n}\n.header {\n  padding: 0 24px;\n  height: 60px;\n  background: white;\n  border-bottom: 1px solid #e2e8f0;\n  display: flex;\n  align-items: center;\n  justify-content: space-between;\n}\n.logo { font-weight: 800; color: #6c63ff; }\n.header nav { display: flex; gap: 20px; }\n.header nav a { color: #718096; text-decoration: none; font-size: .9rem; }\n.main { flex: 1; padding: 40px 24px; }\n.main h1 { color: #2d3748; margin-bottom: 24px; font-size: 1.6rem; }\n.cards {\n  gap: 16px;\n  display: flex;\n  flex-wrap: wrap;\n}\n.card {\n  background: white;\n  border-radius: 10px;\n  padding: 28px 20px;\n  font-weight: 700;\n  color: #2d3748;\n  box-shadow: 0 2px 8px rgba(0,0,0,.07);\n  flex: 1 1 180px;\n}\n.footer {\n  padding: 0 24px;\n  height: 56px;\n  background: #1a1d27;\n  display: flex;\n  align-items: center;\n  justify-content: space-between;\n}\n.footer span { color: #7b85a5; font-size: .8rem; }\n.footer nav { display: flex; gap: 16px; }\n.footer nav a { color: #7b85a5; text-decoration: none; font-size: .8rem; }'
+  }
+];
+
+// ── EXPLANATIONS ──
+var EXPLAIN = [
+
+  // 01 — Centrer un bloc
+  '<div class="prop-line"><code>display: flex</code> — active Flexbox sur le conteneur. Ses enfants deviennent des <em>flex items</em>. Par d\u00e9faut ils s\u2019alignent en ligne (gauche \u2192 droite).</div>'
+  +'<div class="prop-line"><code>justify-content: center</code> — centre les items sur l\u2019axe <strong>principal</strong> (horizontal ici).</div>'
+  +'<div class="prop-line"><code>align-items: center</code> — centre les items sur l\u2019axe <strong>secondaire</strong> (vertical ici).</div>'
+  +'<div class="explain-note">Ces deux propri\u00e9t\u00e9s ensemble = centrage parfait dans les deux directions. C\u2019est le combo le plus utilis\u00e9 en Flexbox.</div>',
+
+  // 02 — 3 \u00e9l\u00e9ments en ligne, \u00e0 gauche
+  '<div class="prop-line"><code>display: flex</code> — par d\u00e9faut <code>flex-direction: row</code>, les 3 bo\u00eetes se placent automatiquement en ligne de gauche \u00e0 droite.</div>'
+  +'<div class="prop-line"><code>align-items: flex-start</code> — aligne les items <strong>en haut</strong> du conteneur. Sans \u00e7a, la valeur par d\u00e9faut <code>stretch</code> \u00e9tirerait chaque bo\u00eete sur toute la hauteur.</div>'
+  +'<div class="prop-line"><code>gap: 12px</code> — espace uniforme entre les items, sans <code>margin</code>. Avantage\u00a0: pas d\u2019espace avant le premier ni apr\u00e8s le dernier item.</div>'
+  +'<div class="explain-note">&#9888; <code>align-items: left</code> n\u2019est <strong>pas une valeur valide</strong> pour Flexbox. Le navigateur l\u2019ignore et applique <code>stretch</code> (d\u00e9faut). Il faut utiliser <code>flex-start</code>.</div>',
+
+  // 03 — Espace \u00e9gal entre 3 \u00e9l\u00e9ments
+  '<div class="prop-line"><code>display: flex</code> — les \u00e9l\u00e9ments se mettent en ligne.</div>'
+  +'<div class="prop-line"><code>justify-content: space-between</code> — distribue l\u2019espace entre les items\u00a0: 1er coll\u00e9 \u00e0 gauche, dernier coll\u00e9 \u00e0 droite, espace restant r\u00e9parti \u00e9galement entre eux.</div>'
+  +'<div class="explain-note">Alternatives utiles\u00a0:<br><code>space-around</code> — espace \u00e9gal autour de chaque item (bords = moiti\u00e9 de l\u2019espace int\u00e9rieur)<br><code>space-evenly</code> — espace identique partout, y compris aux bords</div>',
+
+  // 04 — 3 \u00e9l\u00e9ments en colonne
+  '<div class="prop-line"><code>display: flex</code> — active Flexbox.</div>'
+  +'<div class="prop-line"><code>flex-direction: column</code> — change l\u2019axe principal de <strong>horizontal \u2192 vertical</strong>. Les items s\u2019empilent les uns sous les autres.</div>'
+  +'<div class="prop-line"><code>gap: 12px</code> — espace vertical entre chaque item.</div>'
+  +'<div class="explain-note">&#9888; Quand <code>flex-direction: column</code>, les r\u00f4les s\u2019inversent\u00a0: <code>justify-content</code> agit sur le <strong>vertical</strong> et <code>align-items</code> sur l\u2019<strong>horizontal</strong>.</div>',
+
+  // 05 — Centrage parfait
+  '<div class="prop-line"><code>display: flex</code> + <code>flex-direction: column</code> — axe principal = vertical. Le titre et le bouton s\u2019empilent.</div>'
+  +'<div class="prop-line"><code>justify-content: center</code> — centre sur l\u2019axe <strong>vertical</strong> (car direction = column).</div>'
+  +'<div class="prop-line"><code>align-items: center</code> — centre sur l\u2019axe <strong>horizontal</strong>.</div>'
+  +'<div class="explain-note">C\u2019est la technique standard pour une page d\u2019accueil ou un \u00e9cran de connexion centr\u00e9 (hero section, login page\u2026).</div>',
+
+  // 06 — Barre de navigation
+  '<div class="prop-line"><code>display: flex</code> — logo et liens se placent en ligne.</div>'
+  +'<div class="prop-line"><code>justify-content: space-between</code> — pousse le logo tout \u00e0 gauche et les liens tout \u00e0 droite, avec tout l\u2019espace vide entre eux.</div>'
+  +'<div class="prop-line"><code>align-items: center</code> — aligne verticalement au milieu de la hauteur 60px de la navbar.</div>'
+  +'<div class="explain-note">Note\u00a0: <code>.links</code> est lui-m\u00eame un flex container (d\u00e9j\u00e0 configur\u00e9) pour mettre les liens en ligne avec un gap. Un flex item peut \u00eatre lui-m\u00eame un flex container.</div>',
+
+  // 07 — Header avec bouton \u00e0 droite
+  '<div class="prop-line">Sur <strong>.header</strong>\u00a0: <code>display: flex</code> + <code>align-items: center</code> — titre et bouton en ligne, centr\u00e9s verticalement.</div>'
+  +'<div class="prop-line">Sur <strong>h1</strong>\u00a0: <code>flex: 1</code> — raccourci pour trois propri\u00e9t\u00e9s\u00a0:</div>'
+  +'<div class="prop-line" style="padding-left:16px"><code>flex-grow:\u00a01</code> — le titre <strong>grandit</strong> pour occuper tout l\u2019espace disponible \u2192 repousse le bouton \u00e0 droite</div>'
+  +'<div class="prop-line" style="padding-left:16px"><code>flex-shrink:\u00a01</code> — peut r\u00e9tr\u00e9cir si l\u2019espace manque</div>'
+  +'<div class="prop-line" style="padding-left:16px"><code>flex-basis:\u00a00</code> — taille de d\u00e9part = 0, grandit depuis z\u00e9ro</div>'
+  +'<div class="explain-note">Tu peux \u00e9crire <code>flex: 1</code> (raccourci) <strong>ou</strong> les trois propri\u00e9t\u00e9s s\u00e9par\u00e9ment — les deux sont accept\u00e9es.<br>Alternative visuelle\u00a0: <code>margin-left: auto</code> sur le bouton a le m\u00eame effet.</div>',
+
+  // 08 — 3 cartes de hauteurs diff\u00e9rentes
+  '<div class="prop-line"><code>display: flex</code> — les cartes se placent en ligne.</div>'
+  +'<div class="prop-line"><code>align-items: flex-start</code> — chaque carte garde <strong>sa propre hauteur naturelle</strong>.</div>'
+  +'<div class="prop-line"><code>gap: 16px</code> — espace entre les cartes.</div>'
+  +'<div class="explain-note">Sans <code>align-items: flex-start</code>, la valeur par d\u00e9faut <code>stretch</code> forcerait toutes les cartes \u00e0 avoir la m\u00eame hauteur que la plus grande. Essaie de le supprimer pour voir la diff\u00e9rence.</div>',
+
+  // 09 — Texte en haut, bouton en bas
+  '<div class="prop-line">Sur <strong>.card</strong>\u00a0: <code>display: flex</code> + <code>flex-direction: column</code> — le titre et le bouton s\u2019empilent verticalement.</div>'
+  +'<div class="prop-line">Sur <strong>.card</strong>\u00a0: <code>justify-content: space-between</code> — envoie le titre en haut et le bouton en bas, avec tout l\u2019espace vide entre eux.</div>'
+  +'<div class="prop-line">Sur <strong>button</strong>\u00a0: <code>align-self: flex-end</code> — propri\u00e9t\u00e9 appliqu\u00e9e sur l\u2019<em>enfant</em> (pas le parent). Aligne ce bouton sp\u00e9cifiquement \u00e0 droite, sans affecter les autres items.</div>'
+  +'<div class="explain-note"><code>align-self</code> surcharge <code>align-items</code> du parent pour un seul \u00e9l\u00e9ment. Tr\u00e8s utile pour des exceptions.</div>',
+
+  // 10 — Footer avec 3 blocs
+  '<div class="prop-line"><code>display: flex</code> — les 3 blocs se placent en ligne.</div>'
+  +'<div class="prop-line"><code>justify-content: space-between</code> — logo \u00e0 gauche, liens au centre, copyright \u00e0 droite.</div>'
+  +'<div class="prop-line"><code>align-items: center</code> — tout align\u00e9 verticalement au milieu du footer.</div>'
+  +'<div class="explain-note">C\u2019est le m\u00eame pattern que la navbar (exercice 6). En Flexbox, header, navbar et footer utilisent tr\u00e8s souvent cette combinaison <code>space-between</code> + <code>align-items: center</code>.</div>',
+
+  // 11 — 4 cartes sur toute la largeur
+  '<div class="prop-line">Sur <strong>.container</strong>\u00a0: <code>display: flex</code> + <code>gap: 16px</code> — les cartes en ligne avec de l\u2019espace entre elles.</div>'
+  +'<div class="prop-line">Sur <strong>.card</strong>\u00a0: <code>flex: 1</code> — raccourci pour trois propri\u00e9t\u00e9s\u00a0:</div>'
+  +'<div class="prop-line" style="padding-left:16px"><code>flex-grow:\u00a01</code> — chaque carte <strong>grandit</strong> pour prendre sa part de l\u2019espace</div>'
+  +'<div class="prop-line" style="padding-left:16px"><code>flex-shrink:\u00a01</code> — peut r\u00e9tr\u00e9cir si n\u00e9cessaire</div>'
+  +'<div class="prop-line" style="padding-left:16px"><code>flex-basis:\u00a00</code> — taille de d\u00e9part = 0, tout l\u2019espace est r\u00e9parti depuis z\u00e9ro \u2192 4 parts \u00e9gales</div>'
+  +'<div class="explain-note">Tu peux \u00e9crire <code>flex: 1</code> (raccourci) <strong>ou</strong> les trois propri\u00e9t\u00e9s s\u00e9par\u00e9ment — les deux sont accept\u00e9es.<br>Si tu donnes <code>flex-grow: 2</code> \u00e0 une carte, elle sera deux fois plus large que celles avec <code>flex-grow: 1</code>.</div>',
+
+  // 12 — Un \u00e9l\u00e9ment prend tout l\u2019espace
+  '<div class="prop-line">Les boutons ont <code>flex-shrink: 0</code> — ils ne r\u00e9tr\u00e9cissent jamais, gardent leur taille naturelle.</div>'
+  +'<div class="prop-line">Sur <strong>input</strong>\u00a0: <code>flex: 1</code> — raccourci pour trois propri\u00e9t\u00e9s\u00a0:</div>'
+  +'<div class="prop-line" style="padding-left:16px"><code>flex-grow:\u00a01</code> — le champ <strong>grandit</strong> pour prendre tout l\u2019espace restant apr\u00e8s les boutons</div>'
+  +'<div class="prop-line" style="padding-left:16px"><code>flex-shrink:\u00a01</code> — peut r\u00e9tr\u00e9cir si l\u2019espace manque</div>'
+  +'<div class="prop-line" style="padding-left:16px"><code>flex-basis:\u00a00</code> — taille de d\u00e9part = 0</div>'
+  +'<div class="explain-note">Tu peux \u00e9crire <code>flex: 1</code> (raccourci) <strong>ou</strong> les trois propri\u00e9t\u00e9s s\u00e9par\u00e9ment — les deux sont accept\u00e9es.<br>Pattern tr\u00e8s courant\u00a0: \u00e9l\u00e9ments fixes de chaque c\u00f4t\u00e9 + un \u00e9l\u00e9ment flexible qui remplit tout.</div>',
+
+  // 13 — Carte image + texte
+  '<div class="prop-line"><strong>Flex imbriqu\u00e9</strong> — deux niveaux de Flexbox :</div>'
+  +'<div class="prop-line">Niveau 1, <strong>.card</strong>\u00a0: <code>display: flex</code> — image et corps c\u00f4te \u00e0 c\u00f4te. <code>.card-img</code> a <code>flex-shrink: 0</code> pour rester \u00e0 120px fixe.</div>'
+  +'<div class="prop-line">Niveau 2, <strong>.card-body</strong>\u00a0: <code>display: flex</code> + <code>flex-direction: column</code> — titre, texte et lien empil\u00e9s. <code>flex: 1</code> — raccourci pour\u00a0:</div>'
+  +'<div class="prop-line" style="padding-left:16px"><code>flex-grow:\u00a01</code> — le corps <strong>grandit</strong> pour prendre tout l\u2019espace \u00e0 droite de l\u2019image</div>'
+  +'<div class="prop-line" style="padding-left:16px"><code>flex-shrink:\u00a01</code> — peut r\u00e9tr\u00e9cir</div>'
+  +'<div class="prop-line" style="padding-left:16px"><code>flex-basis:\u00a00</code> — taille de d\u00e9part = 0</div>'
+  +'<div class="explain-note">Tu peux \u00e9crire <code>flex: 1</code> (raccourci) <strong>ou</strong> les trois propri\u00e9t\u00e9s s\u00e9par\u00e9ment — les deux sont accept\u00e9es.<br>Un flex item peut lui-m\u00eame \u00eatre un flex container — c\u2019est la base des layouts complexes.</div>',
+
+  // 14 — Sidebar + contenu
+  '<div class="prop-line">Sur <strong>.layout</strong>\u00a0: <code>display: flex</code> — sidebar et contenu en ligne.</div>'
+  +'<div class="prop-line">Sur <strong>.sidebar</strong>\u00a0: <code>flex-shrink: 0</code> — la sidebar ne r\u00e9tr\u00e9cit <strong>jamais</strong>. Elle reste \u00e0 220px m\u00eame si la page est \u00e9troite.</div>'
+  +'<div class="prop-line">Sur <strong>.content</strong>\u00a0: <code>flex: 1</code> — raccourci pour trois propri\u00e9t\u00e9s\u00a0:</div>'
+  +'<div class="prop-line" style="padding-left:16px"><code>flex-grow:\u00a01</code> — le contenu <strong>grandit</strong> pour prendre tout l\u2019espace restant apr\u00e8s la sidebar</div>'
+  +'<div class="prop-line" style="padding-left:16px"><code>flex-shrink:\u00a01</code> — peut r\u00e9tr\u00e9cir si n\u00e9cessaire</div>'
+  +'<div class="prop-line" style="padding-left:16px"><code>flex-basis:\u00a00</code> — taille de d\u00e9part = 0</div>'
+  +'<div class="prop-line"><code>overflow-y: auto</code> — scroll interne si le contenu est long, sans faire d\u00e9border la page.</div>'
+  +'<div class="explain-note">Tu peux \u00e9crire <code>flex: 1</code> (raccourci) <strong>ou</strong> les trois propri\u00e9t\u00e9s s\u00e9par\u00e9ment — les deux sont accept\u00e9es.<br>Layout sidebar fix\u00e9e + contenu fluide = base des dashboards et apps d\u2019administration.</div>',
+
+  // 15 — Ligne de boutons align\u00e9s
+  '<div class="prop-line"><code>display: flex</code> — les boutons se placent en ligne.</div>'
+  +'<div class="prop-line"><code>align-items: flex-end</code> — tous les boutons sont align\u00e9s par leur <strong>bord bas</strong>, peu importe leur hauteur individuelle.</div>'
+  +'<div class="explain-note">Sans cette propri\u00e9t\u00e9, <code>align-items: stretch</code> (d\u00e9faut) rendrait tous les boutons aussi hauts que le plus grand.<br>Autres valeurs\u00a0: <code>flex-start</code> (bord haut) · <code>center</code> (milieu) · <code>baseline</code> (ligne de texte)</div>',
+
+  // 16 — Galerie avec retour \u00e0 la ligne
+  '<div class="prop-line">Sur <strong>.gallery</strong>\u00a0: <code>display: flex</code> + <code>flex-wrap: wrap</code> — quand les items ne rentrent plus sur une ligne, ils passent \u00e0 la suivante automatiquement.</div>'
+  +'<div class="prop-line">Sur <strong>.item</strong>\u00a0: <code>flex: 1 1 200px</code> — trois valeurs\u00a0:</div>'
+  +'<div class="prop-line" style="padding-left:16px"><code>flex-grow: 1</code> — peut grandir pour remplir l\u2019espace</div>'
+  +'<div class="prop-line" style="padding-left:16px"><code>flex-shrink: 1</code> — peut r\u00e9tr\u00e9cir si n\u00e9cessaire</div>'
+  +'<div class="prop-line" style="padding-left:16px"><code>flex-basis: 200px</code> — taille de d\u00e9part 200px</div>'
+  +'<div class="explain-note">R\u00e9sultat\u00a0: items \u00e0 min ~200px, ils se partagent l\u2019espace restant, et passent \u00e0 la ligne si n\u00e9cessaire. <strong>Responsive sans media query.</strong></div>',
+
+  // 17 — Grille de 6 cartes responsive
+  '<div class="prop-line">Sur <strong>.grid</strong>\u00a0: <code>display: flex</code> + <code>flex-wrap: wrap</code> — grille flexible avec retour \u00e0 la ligne.</div>'
+  +'<div class="prop-line">Sur <strong>.card</strong>\u00a0: <code>flex: 1 1 calc(33.33% - 16px)</code> — raccourci pour\u00a0:</div>'
+  +'<div class="prop-line" style="padding-left:16px"><code>flex-grow:\u00a01</code> — peut grandir pour remplir la ligne</div>'
+  +'<div class="prop-line" style="padding-left:16px"><code>flex-shrink:\u00a01</code> — peut r\u00e9tr\u00e9cir si n\u00e9cessaire</div>'
+  +'<div class="prop-line" style="padding-left:16px"><code>flex-basis:\u00a0calc(33.33% - 16px)</code> — taille de d\u00e9part = un tiers de la largeur moins le gap \u2192 3 cartes exactement par ligne</div>'
+  +'<div class="prop-line">Dans le <code>@media (max-width: 600px)</code>\u00a0: <code>flex: 1 1 calc(50% - 8px)</code> \u2192</div>'
+  +'<div class="prop-line" style="padding-left:16px"><code>flex-basis:\u00a0calc(50% - 8px)</code> — moiti\u00e9 de la largeur \u2192 2 cartes par ligne</div>'
+  +'<div class="explain-note">Tu peux \u00e9crire <code>flex: 1 1 calc(...)</code> (raccourci) <strong>ou</strong> les trois propri\u00e9t\u00e9s s\u00e9par\u00e9ment — les deux sont accept\u00e9es.<br><code>calc()</code> m\u00e9lange des unit\u00e9s diff\u00e9rentes (<code>%</code> + <code>px</code>). Indispensable pour des grilles avec gap pr\u00e9cis.</div>',
+
+  // 18 — Menu de tags multi-lignes
+  '<div class="prop-line"><code>display: flex</code> + <code>flex-wrap: wrap</code> — les tags passent \u00e0 la ligne quand n\u00e9cessaire, en gardant leur largeur naturelle.</div>'
+  +'<div class="prop-line"><code>gap: 10px</code> — espace entre les tags, horizontal ET vertical (quand ils passent \u00e0 la ligne).</div>'
+  +'<div class="prop-line"><code>align-content: flex-start</code> — quand il y a plusieurs lignes, les colle en haut du conteneur.</div>'
+  +'<div class="explain-note"><code>align-items</code> g\u00e8re l\u2019alignement sur <strong>une seule ligne</strong>.<br><code>align-content</code> g\u00e8re la r\u00e9partition de <strong>plusieurs lignes</strong> entre elles. Cette propri\u00e9t\u00e9 n\u2019a d\u2019effet qu\u2019avec <code>flex-wrap: wrap</code>.</div>',
+
+  // 19 — Section t\u00e9moignages responsive
+  '<div class="prop-line">Sur <strong>.cards</strong>\u00a0: <code>display: flex</code> + <code>flex-wrap: wrap</code> + <code>gap: 20px</code>.</div>'
+  +'<div class="prop-line">Sur <strong>.card</strong>\u00a0: <code>flex: 1 1 240px</code> — raccourci pour\u00a0:</div>'
+  +'<div class="prop-line" style="padding-left:16px"><code>flex-grow:\u00a01</code> — peut grandir pour remplir la ligne</div>'
+  +'<div class="prop-line" style="padding-left:16px"><code>flex-shrink:\u00a01</code> — peut r\u00e9tr\u00e9cir</div>'
+  +'<div class="prop-line" style="padding-left:16px"><code>flex-basis:\u00a0240px</code> — taille de d\u00e9part 240px \u2192 naturellement 3 par ligne sur grand \u00e9cran, 2 sur moyen, 1 sur petit</div>'
+  +'<div class="prop-line">Dans le <code>@media (max-width: 580px)</code>\u00a0: <code>flex: 1 1 100%</code> \u2192</div>'
+  +'<div class="prop-line" style="padding-left:16px"><code>flex-basis:\u00a0100%</code> — chaque carte prend toute la largeur \u2192 une par ligne, empil\u00e9es</div>'
+  +'<div class="explain-note">Tu peux \u00e9crire <code>flex: 1 1 240px</code> (raccourci) <strong>ou</strong> les trois propri\u00e9t\u00e9s s\u00e9par\u00e9ment — les deux sont accept\u00e9es.<br><code>flex: 1 1 100%</code> dans une media query = technique standard pour passer d\u2019une grille horizontale \u00e0 un empilement mobile.</div>',
+
+  // 20 — Page compl\u00e8te responsive
+  '<div class="prop-line"><strong>.page</strong>\u00a0: <code>display: flex</code> + <code>flex-direction: column</code> — header, main, footer empil\u00e9s sur toute la hauteur.</div>'
+  +'<div class="prop-line"><strong>.main</strong>\u00a0: <code>flex: 1</code> — raccourci pour\u00a0:</div>'
+  +'<div class="prop-line" style="padding-left:16px"><code>flex-grow:\u00a01</code> — le main <strong>grandit</strong> pour occuper tout l\u2019espace entre header et footer</div>'
+  +'<div class="prop-line" style="padding-left:16px"><code>flex-shrink:\u00a01</code> — peut r\u00e9tr\u00e9cir</div>'
+  +'<div class="prop-line" style="padding-left:16px"><code>flex-basis:\u00a00</code> — taille de d\u00e9part = 0 \u2192 pattern <em>sticky footer</em> : le footer reste toujours en bas</div>'
+  +'<div class="prop-line"><strong>.header</strong> et <strong>.footer</strong>\u00a0: <code>display: flex</code> + <code>justify-content: space-between</code> + <code>align-items: center</code>.</div>'
+  +'<div class="prop-line"><strong>.cards</strong>\u00a0: <code>flex: 1 1 180px</code> sur chaque carte — raccourci pour\u00a0:</div>'
+  +'<div class="prop-line" style="padding-left:16px"><code>flex-grow:\u00a01</code> — peut grandir</div>'
+  +'<div class="prop-line" style="padding-left:16px"><code>flex-shrink:\u00a01</code> — peut r\u00e9tr\u00e9cir</div>'
+  +'<div class="prop-line" style="padding-left:16px"><code>flex-basis:\u00a0180px</code> — taille de d\u00e9part 180px \u2192 grille responsive automatique</div>'
+  +'<div class="explain-note">Tu peux \u00e9crire <code>flex: 1</code> ou <code>flex: 1 1 180px</code> (raccourcis) <strong>ou</strong> les trois propri\u00e9t\u00e9s s\u00e9par\u00e9ment — les deux sont accept\u00e9es.</div>'
+
+];
+
+// ── STATE ──
+var cur = 0;
+var done = (function() {
+  try { return JSON.parse(localStorage.getItem('fb-done') || '[]'); } catch(e) { return []; }
+})();
+var activeTab = 'html';
+var hintVisible = false;
+var runTimer = null;
+
+// ── CORE ──
+function init() {
+  buildModals();
+  // Si d\u00e9j\u00e0 tout compl\u00e9t\u00e9 (rechargement de page), afficher le bouton synth\u00e8se
+  if (done.length === EX.length) {
+    var btn = document.getElementById('btnHdrSynth');
+    if (btn) btn.style.display = '';
+  }
+  // Purge les entrées CSS vides laissées par une ancienne version
+  for (var k = 0; k < EX.length; k++) {
+    try {
+      var v = localStorage.getItem('fb-ex-' + k);
+      if (v) {
+        var p = JSON.parse(v);
+        if (p.css === '') localStorage.removeItem('fb-ex-' + k);
+      }
+    } catch(e) {}
+  }
+  buildSidebar();
+  loadEx(0);
+}
+
+function buildSidebar() {
+  var sb = document.getElementById('sidebar');
+  sb.innerHTML = '';
+  var levels = [
+    { lv:1, label:'Niveau 1 - Bases', r:[0,4] },
+    { lv:2, label:'Niveau 2 - Alignement', r:[5,9] },
+    { lv:3, label:'Niveau 3 - Repartition', r:[10,14] },
+    { lv:4, label:'Niveau 4 - Wrap & Responsive', r:[15,19] }
+  ];
+  levels.forEach(function(lv) {
+    var sec = document.createElement('div');
+    sec.className = 'sidebar-section';
+    var lbl = document.createElement('div');
+    lbl.className = 'sidebar-level';
+    lbl.textContent = lv.label;
+    sec.appendChild(lbl);
+    for (var i = lv.r[0]; i <= lv.r[1]; i++) {
+      (function(idx) {
+        var ex = EX[idx];
+        var item = document.createElement('div');
+        var isDone = done.indexOf(idx) !== -1;
+        item.className = 'exo-item' + (isDone ? ' done' : '') + (idx === cur ? ' active' : '');
+        var num = document.createElement('span');
+        num.className = 'exo-num';
+        num.textContent = isDone ? '\u2713' : (idx + 1);
+        var txt = document.createElement('span');
+        txt.textContent = ex.title;
+        item.appendChild(num);
+        item.appendChild(txt);
+        item.onclick = function() { loadEx(idx); };
+        sec.appendChild(item);
+      })(i);
+    }
+    sb.appendChild(sec);
+  });
+}
+
+function loadEx(i) {
+  cur = i;
+  var ex = EX[i];
+  hintVisible = false;
+  document.getElementById('hintPanel').classList.remove('visible');
+  document.getElementById('checkPanel').classList.remove('visible');
+  document.getElementById('explainPanel').classList.remove('visible');
+  explainVisible = false;
+  document.getElementById('btnExplain').textContent = 'Explication';
+  document.getElementById('exoBadge').textContent = (i < 9 ? '0' : '') + (i + 1);
+  document.getElementById('exoTitle').textContent = ex.title;
+  document.getElementById('exoDesc').textContent = ex.desc;
+  document.getElementById('hintPanel').innerHTML = ex.hint;
+  var saved = getSaved(i);
+  document.getElementById('editorHTML').value = (saved.html !== undefined) ? saved.html : ex.html;
+  document.getElementById('editorCSS').value = (saved.css) ? saved.css : ex.css;
+  document.getElementById('btnPrev').disabled = (i === 0);
+  document.getElementById('btnNext').disabled = (i === EX.length - 1);
+  switchTab(activeTab);
+  buildSidebar();
+  updateProgress();
+  runCode();
+}
+
+function getSaved(i) {
+  try {
+    var v = localStorage.getItem('fb-ex-' + i);
+    return v ? JSON.parse(v) : {};
+  } catch(e) { return {}; }
+}
+
+function saveCode(i) {
+  try {
+    localStorage.setItem('fb-ex-' + i, JSON.stringify({
+      html: document.getElementById('editorHTML').value,
+      css: document.getElementById('editorCSS').value
+    }));
+  } catch(e) {}
+}
+
+function runCode() {
+  var html = document.getElementById('editorHTML').value;
+  var css = document.getElementById('editorCSS').value;
+  var doc = '<!DOCTYPE html><html><head><meta charset="UTF-8">' +
+    '<style>*{box-sizing:border-box;margin:0;padding:0;}' + css + '</style>' +
+    '</head><body>' + html + '</body></html>';
+  var fr = document.getElementById('preview');
+  try {
+    var d = fr.contentDocument || fr.contentWindow.document;
+    d.open('text/html', 'replace');
+    d.write(doc);
+    d.close();
+  } catch(e) {
+    fr.srcdoc = doc;
+  }
+  saveCode(cur);
+}
+
+function autoRun() {
+  clearTimeout(runTimer);
+  runTimer = setTimeout(runCode, 500);
+}
+
+function switchTab(tab) {
+  activeTab = tab;
+  document.getElementById('editorHTML').style.display = tab === 'html' ? '' : 'none';
+  document.getElementById('editorCSS').style.display = tab === 'css' ? '' : 'none';
+  document.getElementById('tabHTML').className = 'tab' + (tab === 'html' ? ' active' : '');
+  document.getElementById('tabCSS').className = 'tab' + (tab === 'css' ? ' active' : '');
+  if (tab === 'css') {
+    var ta = document.getElementById('editorCSS');
+    var marker = '/* Ton code ici */';
+    var pos = ta.value.indexOf(marker);
+    if (pos !== -1) {
+      ta.focus();
+      ta.setSelectionRange(pos, pos + marker.length);
+    } else {
+      ta.focus();
+    }
+  }
+}
+
+function toggleHint() {
+  hintVisible = !hintVisible;
+  document.getElementById('hintPanel').classList.toggle('visible', hintVisible);
+}
+
+function showSolution() {
+  if (!confirm('Voir la solution ?')) return;
+  var ex = EX[cur];
+  document.getElementById('editorHTML').value = ex.html;
+  document.getElementById('editorCSS').value = ex.sol;
+  runCode();
+}
+
+function resetCode() {
+  if (!confirm('Reinitialiser ?')) return;
+  var ex = EX[cur];
+  document.getElementById('editorHTML').value = ex.html;
+  document.getElementById('editorCSS').value = ex.css;
+  try { localStorage.removeItem('fb-ex-' + cur); } catch(e) {}
+  runCode();
+}
+
+function markDone() {
+  if (done.indexOf(cur) === -1) {
+    done.push(cur);
+    try { localStorage.setItem('fb-done', JSON.stringify(done)); } catch(e) {}
+  }
+  buildSidebar();
+  updateProgress();
+  if (done.length === EX.length) {
+    setTimeout(showCelebration, 350);
+  } else if (cur < EX.length - 1) {
+    setTimeout(function() { loadEx(cur + 1); }, 200);
+  }
+}
+
+// ─── CELEBRATION & CONFETTI ───
+var confettiRAF = null;
+
+function buildModals() {
+  // Canvas confetti
+  var canvas = document.createElement('canvas');
+  canvas.id = 'confettiCanvas';
+  document.body.appendChild(canvas);
+
+  // Celebration overlay
+  var ov = document.createElement('div');
+  ov.id = 'celebOverlay';
+  ov.style.display = 'none';
+  ov.innerHTML = '<div class="celeb-card">'
+    + '<div class="celeb-stars"><span class="celeb-star">\u2b50</span><span class="celeb-star">\u2b50</span><span class="celeb-star">\u2b50</span></div>'
+    + '<div class="celeb-trophy">\ud83c\udfc6</div>'
+    + '<div class="celeb-title">Niveau Ma\u00eetre</div>'
+    + '<div class="celeb-sub">Tu as compl\u00e9t\u00e9 les 20 exercices Flexbox.<br>Tu ma\u00eetrises les fondamentaux\u00a0\u2014 bienvenue dans la cour des grands.</div>'
+    + '<div class="celeb-stats">'
+    +   '<div class="celeb-stat"><span class="num">20</span><span class="lbl">Exercices</span></div>'
+    +   '<div class="celeb-stat"><span class="num">4</span><span class="lbl">Niveaux</span></div>'
+    +   '<div class="celeb-stat"><span class="num">100%</span><span class="lbl">Flexbox</span></div>'
+    + '</div>'
+    + '<div class="celeb-btns">'
+    +   '<button class="btn-open-synth" onclick="openCheatSheet()">\ud83d\udccb Ouvrir la fiche de synth\u00e8se</button>'
+    +   '<button class="btn-celeb-close" onclick="closeCelebration()">Continuer \u00e0 pratiquer</button>'
+    + '</div>'
+    + '</div>';
+  document.body.appendChild(ov);
+
+  // Cheat sheet overlay
+  var cs = document.createElement('div');
+  cs.id = 'cheatOverlay';
+  cs.innerHTML = '<div class="cheat-inner">'
+    + '<div class="cheat-header">'
+    +   '<h1><em>Flex</em>box \u2014 Fiche de Synth\u00e8se Compl\u00e8te</h1>'
+    +   '<div style="display:flex;gap:8px">'
+    +   '<button class="btn-close-cheat" onclick="printCheatSheet()" style="color:#4fc3f7;border-color:rgba(79,195,247,.4)">\ud83d\udda8\ufe0f Imprimer</button>'
+
+    +   '<button class="btn-close-cheat" onclick="closeCheatSheet()">\u2715 Fermer</button>'
+    +   '</div>'
+    + '</div>'
+    + buildCheatSheetHTML()
+    + '</div>';
+  document.body.appendChild(cs);
+
+  // Synth\u00e8se button in header (visible after completion)
+  var btnS = document.createElement('button');
+  btnS.className = 'btn-hdr-synth';
+  btnS.id = 'btnHdrSynth';
+  btnS.textContent = '\ud83d\udcca Synth\u00e8se';
+  btnS.onclick = openCheatSheet;
+  document.querySelector('header').appendChild(btnS);
+}
+
+function showCelebration() {
+  var ov = document.getElementById('celebOverlay');
+  ov.style.display = 'flex';
+  var btn = document.getElementById('btnHdrSynth');
+  if (btn) btn.style.display = '';
+  launchConfetti();
+  // Focus le premier bouton pour les utilisateurs clavier
+  setTimeout(function() {
+    var first = ov.querySelector('.btn-open-synth');
+    if (first) first.focus();
+  }, 500);
+}
+
+function closeCelebration() {
+  var ov = document.getElementById('celebOverlay');
+  ov.style.display = 'none';
+  if (confettiRAF) { cancelAnimationFrame(confettiRAF); confettiRAF = null; }
+  var c = document.getElementById('confettiCanvas');
+  if (c) { var ctx = c.getContext('2d'); ctx.clearRect(0, 0, c.width, c.height); }
+}
+
+function launchConfetti() {
+  var canvas = document.getElementById('confettiCanvas');
+  if (!canvas) return;
+  canvas.width  = window.innerWidth;
+  canvas.height = window.innerHeight;
+  var ctx = canvas.getContext('2d');
+  var colors = ['#6c63ff','#a78bfa','#ff6584','#43d98c','#ffd166','#4fc3f7','#f9a8d4','#fb923c'];
+  var pieces = [];
+  for (var i = 0; i < 200; i++) {
+    var circ = Math.random() > .55;
+    pieces.push({
+      x: Math.random() * canvas.width,
+      y: Math.random() * canvas.height * .4 - canvas.height * .4,
+      w: Math.random() * 11 + 5,
+      h: Math.random() * 7 + 3,
+      color: colors[~~(Math.random() * colors.length)],
+      vx: (Math.random() - .5) * 5,
+      vy: Math.random() * 4 + 1,
+      rot: Math.random() * Math.PI * 2,
+      rotV: (Math.random() - .5) * .14,
+      circ: circ
+    });
+  }
+  var t0 = Date.now();
+  function frame() {
+    var elapsed = Date.now() - t0;
+    var alpha = elapsed > 4500 ? Math.max(0, 1 - (elapsed - 4500) / 2000) : 1;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.globalAlpha = alpha;
+    pieces.forEach(function(p) {
+      p.x += p.vx; p.y += p.vy; p.vy += .09; p.rot += p.rotV;
+      if (p.y > canvas.height + 20) { p.y = -15; p.x = Math.random() * canvas.width; p.vy = Math.random() * 3 + 1; }
+      ctx.save(); ctx.translate(p.x, p.y);
+      if (!p.circ) ctx.rotate(p.rot);
+      ctx.fillStyle = p.color;
+      if (p.circ) { ctx.beginPath(); ctx.arc(0, 0, p.w / 2, 0, Math.PI * 2); ctx.fill(); }
+      else ctx.fillRect(-p.w/2, -p.h/2, p.w, p.h);
+      ctx.restore();
+    });
+    ctx.globalAlpha = 1;
+    if (elapsed < 6500) confettiRAF = requestAnimationFrame(frame);
+    else ctx.clearRect(0, 0, canvas.width, canvas.height);
+  }
+  frame();
+}
+
+function openCheatSheet() {
+  closeCelebration();
+  var el = document.getElementById('cheatOverlay');
+  el.classList.add('open');
+  el.scrollTop = 0;
+  document.getElementById('btnHdrSynth').style.display = '';
+  // Focus le bouton fermer pour les utilisateurs clavier
+  setTimeout(function() {
+    var btn = el.querySelector('.btn-close-cheat');
+    if (btn) btn.focus();
+  }, 50);
+}
+function printCheatSheet() {
+  var cheat = document.getElementById('cheatOverlay');
+  var prev = cheat.style.cssText;
+  cheat.style.cssText += ';position:static!important;overflow:visible!important;height:auto!important;';
+  window.print();
+  cheat.style.cssText = prev;
+}
+function closeCheatSheet() {
+  document.getElementById('cheatOverlay').classList.remove('open');
+}
+
+function buildCheatSheetHTML() {
+  return ''
+
+  // ── SECTION 1 : LES DEUX AXES ──
+  +'<div class="cheat-section">'
+  +'<div class="cheat-h2">1 \u2014 Les Deux Axes \u2014 Concept Fondamental</div>'
+  +'<div class="axis-wrap">'
+  +'<div style="position:relative;margin-bottom:36px">'
+  +'<div class="axis-diagram">'
+  +'<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:.65rem;color:#7b85a5;text-align:center">Conteneur<br>flex</div>'
+  +'<div style="position:absolute;left:10px;top:30%;width:180px;height:2px;background:#6c63ff"></div>'
+  +'<div style="position:absolute;left:186px;top:calc(30% - 4px);border:4px solid transparent;border-left:7px solid #6c63ff"></div>'
+  +'<div style="position:absolute;left:34%;top:10px;width:2px;height:100px;background:#ff6584"></div>'
+  +'<div style="position:absolute;left:calc(34% - 4px);top:108px;border:4px solid transparent;border-top:7px solid #ff6584"></div>'
+  +'</div>'
+  +'<div class="axis-arrow-h" style="position:relative;width:200px;margin-top:8px;display:flex;justify-content:space-between">'
+  +'<span style="color:#6c63ff;font-size:.68rem;font-weight:700">\u27f5 Axe principal (main axis)</span>'
+  +'</div>'
+  +'<div style="position:absolute;right:-70px;top:0;bottom:0;display:flex;flex-direction:column;justify-content:space-between;align-items:center">'
+  +'<span style="color:#ff6584;font-size:.68rem;font-weight:700;writing-mode:vertical-rl;transform:rotate(180deg)">Axe secondaire (cross axis) \u27f5</span>'
+  +'</div>'
+  +'</div>'
+  +'<div class="axis-note" style="min-width:200px;flex:1">'
+  +'<strong>Axe principal</strong> — d\u00e9fini par <code style="font-family:monospace;color:#7dd3fc;background:#1e2235;padding:1px 4px;border-radius:3px">flex-direction</code><br>'
+  +'<code style="font-family:monospace;color:#ffd166;background:#1e2235;padding:1px 4px;border-radius:3px;font-size:.72rem">row</code> \u2192 horizontal &nbsp;|&nbsp; <code style="font-family:monospace;color:#ffd166;background:#1e2235;padding:1px 4px;border-radius:3px;font-size:.72rem">column</code> \u2192 vertical<br><br>'
+  +'<strong>Axe secondaire</strong> — toujours perpendiculaire \u00e0 l\u2019axe principal<br><br>'
+  +'<strong>justify-content</strong> agit sur l\u2019axe <span style="color:#6c63ff">principal</span><br>'
+  +'<strong>align-items</strong> agit sur l\u2019axe <span style="color:#ff6584">secondaire</span><br><br>'
+  +'<div class="tag-row">'
+  +'<span class="tag tag-cont">Conteneur</span><span class="tag tag-cont">display: flex</span>'
+  +'<span class="tag tag-item">Item</span><span class="tag tag-item">enfant direct</span>'
+  +'</div>'
+  +'</div>'
+  +'</div>'
+  +'</div>'
+
+  // ── SECTION 2 : PROPRIÉTÉS DU CONTENEUR ──
+  +'<div class="cheat-section">'
+  +'<div class="cheat-h2">2 \u2014 Propri\u00e9t\u00e9s du Conteneur <span class="tag tag-cont" style="font-size:.58rem;letter-spacing:0">display: flex</span></div>'
+  +'<table class="cheat-table"><thead><tr><th>Propri\u00e9t\u00e9</th><th>Valeurs</th><th>Description</th></tr></thead><tbody>'
+  +'<tr><td class="ct-prop">display</td><td class="ct-vals"><code>flex</code> <code>inline-flex</code></td><td class="ct-desc">Active Flexbox. <code>flex</code> = bloc pleine largeur, <code>inline-flex</code> = inline.</td></tr>'
+  +'<tr><td class="ct-prop">flex-direction</td><td class="ct-vals"><code>row</code> <code>row-reverse</code><br><code>column</code> <code>column-reverse</code><div class="ct-default">d\u00e9faut: row</div></td><td class="ct-desc">Direction de l\u2019axe principal. Inverse l\u2019ordre avec <code>-reverse</code>.</td></tr>'
+  +'<tr><td class="ct-prop">flex-wrap</td><td class="ct-vals"><code>nowrap</code> <code>wrap</code> <code>wrap-reverse</code><div class="ct-default">d\u00e9faut: nowrap</div></td><td class="ct-desc"><code>nowrap</code> = tout sur une ligne (peut d\u00e9border).<br><code>wrap</code> = passe \u00e0 la ligne automatiquement.</td></tr>'
+  +'<tr><td class="ct-prop">flex-flow</td><td class="ct-vals"><code>row wrap</code> <code>column nowrap</code><br><span style="font-size:.7rem;color:#7b85a5">shorthand direction + wrap</span></td><td class="ct-desc">Raccourci de <code>flex-direction</code> + <code>flex-wrap</code>.</td></tr>'
+  +'<tr><td class="ct-prop">justify-content</td><td class="ct-vals"><code>flex-start</code> <code>flex-end</code> <code>center</code><br><code>space-between</code> <code>space-around</code> <code>space-evenly</code><div class="ct-default">d\u00e9faut: flex-start</div></td><td class="ct-desc">Alignement sur l\u2019axe <strong>principal</strong>. Distribue l\u2019espace libre entre/autour des items.</td></tr>'
+  +'<tr><td class="ct-prop">align-items</td><td class="ct-vals"><code>stretch</code> <code>flex-start</code> <code>flex-end</code><br><code>center</code> <code>baseline</code><div class="ct-default">d\u00e9faut: stretch</div></td><td class="ct-desc">Alignement sur l\u2019axe <strong>secondaire</strong> \u2014 pour <em>une seule ligne</em>. <code>stretch</code> = \u00e9tire les items \u00e0 la m\u00eame hauteur.</td></tr>'
+  +'<tr><td class="ct-prop">align-content</td><td class="ct-vals"><code>stretch</code> <code>flex-start</code> <code>flex-end</code><br><code>center</code> <code>space-between</code> <code>space-around</code><div class="ct-default">d\u00e9faut: stretch</div></td><td class="ct-desc">Comme <code>align-items</code> mais pour <em>plusieurs lignes</em>. N\u2019a d\u2019effet qu\u2019avec <code>flex-wrap: wrap</code> et plusieurs lignes.</td></tr>'
+  +'<tr><td class="ct-prop">gap</td><td class="ct-vals"><code>16px</code> <code>12px 20px</code><br><code>row-gap</code> / <code>column-gap</code><div class="ct-default">d\u00e9faut: 0</div></td><td class="ct-desc">Espace entre les items. <code>gap: 12px 20px</code> = 12px vertical, 20px horizontal. Aucun espace aux bords.</td></tr>'
+  +'</tbody></table>'
+  +'</div>'
+
+  // ── SECTION 3 : PROPRIÉTÉS DES ITEMS ──
+  +'<div class="cheat-section">'
+  +'<div class="cheat-h2">3 \u2014 Propri\u00e9t\u00e9s des Items <span class="tag tag-item" style="font-size:.58rem;letter-spacing:0">enfant direct</span></div>'
+  +'<table class="cheat-table"><thead><tr><th>Propri\u00e9t\u00e9</th><th>Valeurs</th><th>Description</th></tr></thead><tbody>'
+  +'<tr><td class="ct-prop">flex-grow</td><td class="ct-vals"><code>0</code> <code>1</code> <code>2</code> \u2026<div class="ct-default">d\u00e9faut: 0</div></td><td class="ct-desc">Facteur de <strong>croissance</strong>. <code>0</code> = ne grandit pas. <code>1</code> = prend sa part de l\u2019espace libre. <code>2</code> = deux fois plus que <code>1</code>.</td></tr>'
+  +'<tr><td class="ct-prop">flex-shrink</td><td class="ct-vals"><code>1</code> <code>0</code> <code>2</code> \u2026<div class="ct-default">d\u00e9faut: 1</div></td><td class="ct-desc">Facteur de <strong>r\u00e9tr\u00e9cissement</strong>. <code>0</code> = ne r\u00e9tr\u00e9cit jamais (taille fixe). <code>1</code> = peut r\u00e9tr\u00e9cir proportionnellement.</td></tr>'
+  +'<tr><td class="ct-prop">flex-basis</td><td class="ct-vals"><code>auto</code> <code>200px</code> <code>30%</code> <code>0</code><div class="ct-default">d\u00e9faut: auto</div></td><td class="ct-desc">Taille de <strong>d\u00e9part</strong> avant distribution de l\u2019espace. <code>auto</code> = utilise la taille du contenu. <code>0</code> = tout l\u2019espace est distribu\u00e9 librement.</td></tr>'
+  +'<tr><td class="ct-prop">flex</td><td class="ct-vals"><code>1</code> <code>none</code> <code>auto</code><br><code>1 1 200px</code><div class="ct-default">d\u00e9faut: 0 1 auto</div></td><td class="ct-desc">Raccourci de <code>flex-grow</code> <code>flex-shrink</code> <code>flex-basis</code>. Voir section 4.</td></tr>'
+  +'<tr><td class="ct-prop">align-self</td><td class="ct-vals"><code>auto</code> <code>flex-start</code> <code>flex-end</code><br><code>center</code> <code>baseline</code> <code>stretch</code><div class="ct-default">d\u00e9faut: auto</div></td><td class="ct-desc">Surcharge <code>align-items</code> du parent pour <em>cet item uniquement</em>. <code>auto</code> = h\u00e9rite du parent.</td></tr>'
+  +'<tr><td class="ct-prop">order</td><td class="ct-vals"><code>0</code> <code>-1</code> <code>1</code> \u2026<div class="ct-default">d\u00e9faut: 0</div></td><td class="ct-desc">Ordre d\u2019affichage visuel (ind\u00e9pendant du DOM). Valeurs plus petites = avant. <code>-1</code> = en premier.</td></tr>'
+  +'<tr><td class="ct-prop">min-width / min-height</td><td class="ct-vals"><code>0</code> <code>auto</code> <code>200px</code><div class="ct-default">d\u00e9faut: auto</div></td><td class="ct-desc"><code>min-width: 0</code> permet \u00e0 un item de r\u00e9tr\u00e9cir en dessous de la taille de son contenu (n\u00e9cessaire pour le text-overflow par ex.).</td></tr>'
+  +'</tbody></table>'
+  +'</div>'
+
+  // ── SECTION 4 : FLEX SHORTHAND ──
+  +'<div class="cheat-section">'
+  +'<div class="cheat-h2">4 \u2014 Le Raccourci <code style="font-size:.7rem;color:#ffd166;background:#1e2235;padding:2px 6px;border-radius:3px;font-style:normal">flex</code> D\u00e9compos\u00e9</div>'
+  +'<table class="flex-table"><thead><tr><th>Raccourci</th><th>Equivalent longhand</th><th>Comportement</th></tr></thead><tbody>'
+  +'<tr><td class="ft-short">flex: 0</td><td class="ft-exp"><code>flex-grow: 0</code> <code>flex-shrink: 1</code> <code>flex-basis: 0</code></td><td class="ft-note">Ne grandit pas. Taille = contenu.</td></tr>'
+  +'<tr><td class="ft-short">flex: 1</td><td class="ft-exp"><code>flex-grow: 1</code> <code>flex-shrink: 1</code> <code>flex-basis: 0</code></td><td class="ft-note">Grandit et r\u00e9tr\u00e9cit. Espace divis\u00e9 \u00e9galement si tous \u00e0 1.</td></tr>'
+  +'<tr><td class="ft-short">flex: auto</td><td class="ft-exp"><code>flex-grow: 1</code> <code>flex-shrink: 1</code> <code>flex-basis: auto</code></td><td class="ft-note">Grandit et r\u00e9tr\u00e9cit. Taille de base = contenu.</td></tr>'
+  +'<tr><td class="ft-short">flex: none</td><td class="ft-exp"><code>flex-grow: 0</code> <code>flex-shrink: 0</code> <code>flex-basis: auto</code></td><td class="ft-note">Taille fixe = contenu. Ni grandit, ni r\u00e9tr\u00e9cit.</td></tr>'
+  +'<tr><td class="ft-short">flex: 2</td><td class="ft-exp"><code>flex-grow: 2</code> <code>flex-shrink: 1</code> <code>flex-basis: 0</code></td><td class="ft-note">Grandit 2\u00d7 plus vite qu\u2019un item \u00e0 <code>flex: 1</code>.</td></tr>'
+  +'<tr><td class="ft-short">flex: 1 1 200px</td><td class="ft-exp"><code>flex-grow: 1</code> <code>flex-shrink: 1</code> <code>flex-basis: 200px</code></td><td class="ft-note">D\u00e9marre \u00e0 200px, grandit et r\u00e9tr\u00e9cit. Id\u00e9al pour grilles responsives.</td></tr>'
+  +'<tr><td class="ft-short">flex: 0 0 220px</td><td class="ft-exp"><code>flex-grow: 0</code> <code>flex-shrink: 0</code> <code>flex-basis: 220px</code></td><td class="ft-note">Taille fixe 220px. Ni grandit, ni r\u00e9tr\u00e9cit. Sidebar fixe.</td></tr>'
+  +'</tbody></table>'
+  +'</div>'
+
+  // ── SECTION 5 : VISUALISATION JUSTIFY-CONTENT ──
+  +'<div class="cheat-section">'
+  +'<div class="cheat-h2">5 \u2014 justify-content (axe principal)</div>'
+  +'<div class="vis-grid">'
+  +'<div class="vis-item"><div class="vis-label">flex-start</div><div class="vis-track"><div class="vis-box"></div><div class="vis-box"></div><div class="vis-box"></div></div></div>'
+  +'<div class="vis-item"><div class="vis-label">flex-end</div><div class="vis-track" style="justify-content:flex-end"><div class="vis-box"></div><div class="vis-box"></div><div class="vis-box"></div></div></div>'
+  +'<div class="vis-item"><div class="vis-label">center</div><div class="vis-track" style="justify-content:center"><div class="vis-box"></div><div class="vis-box"></div><div class="vis-box"></div></div></div>'
+  +'<div class="vis-item"><div class="vis-label">space-between</div><div class="vis-track" style="justify-content:space-between"><div class="vis-box"></div><div class="vis-box"></div><div class="vis-box"></div></div></div>'
+  +'<div class="vis-item"><div class="vis-label">space-around</div><div class="vis-track" style="justify-content:space-around"><div class="vis-box"></div><div class="vis-box"></div><div class="vis-box"></div></div></div>'
+  +'<div class="vis-item"><div class="vis-label">space-evenly</div><div class="vis-track" style="justify-content:space-evenly"><div class="vis-box"></div><div class="vis-box"></div><div class="vis-box"></div></div></div>'
+  +'</div>'
+  +'</div>'
+
+  // ── SECTION 6 : VISUALISATION ALIGN-ITEMS ──
+  +'<div class="cheat-section">'
+  +'<div class="cheat-h2">6 \u2014 align-items (axe secondaire \u2014 hauteurs diff\u00e9rentes)</div>'
+  +'<div class="vis-grid">'
+  +'<div class="vis-item"><div class="vis-label">stretch <span style="color:#7b85a5;font-size:.62rem">(d\u00e9faut)</span></div><div class="vis-track" style="align-items:stretch"><div class="vis-box" style="height:auto;align-self:stretch;min-height:12px"></div><div class="vis-box" style="height:auto;align-self:stretch;min-height:12px"></div><div class="vis-box" style="height:auto;align-self:stretch;min-height:12px"></div></div></div>'
+  +'<div class="vis-item"><div class="vis-label">flex-start</div><div class="vis-track" style="align-items:flex-start"><div class="vis-box s"></div><div class="vis-box"></div><div class="vis-box t"></div></div></div>'
+  +'<div class="vis-item"><div class="vis-label">flex-end</div><div class="vis-track" style="align-items:flex-end"><div class="vis-box s"></div><div class="vis-box"></div><div class="vis-box t"></div></div></div>'
+  +'<div class="vis-item"><div class="vis-label">center</div><div class="vis-track" style="align-items:center"><div class="vis-box s"></div><div class="vis-box"></div><div class="vis-box t"></div></div></div>'
+  +'<div class="vis-item"><div class="vis-label">baseline</div><div class="vis-track" style="align-items:baseline;gap:6px"><div style="width:22px;background:#6c63ff;border-radius:3px;flex-shrink:0;padding:4px 2px;font-size:.55rem;color:#fff;text-align:center;line-height:1">Aa</div><div style="width:22px;background:#a78bfa;border-radius:3px;flex-shrink:0;padding:8px 2px;font-size:.7rem;color:#fff;text-align:center;line-height:1">Aa</div><div style="width:22px;background:#4fc3f7;border-radius:3px;flex-shrink:0;padding:2px;font-size:1rem;color:#fff;text-align:center;line-height:1">Aa</div></div></div>'
+  +'<div class="vis-item"><div class="vis-label">align-self <span style="color:#43d98c;font-size:.6rem">(sur l\u2019item)</span></div><div class="vis-track" style="align-items:flex-start"><div class="vis-box s"></div><div class="vis-box" style="align-self:center"></div><div class="vis-box t" style="align-self:flex-end"></div></div></div>'
+  +'</div>'
+  +'</div>'
+
+  // ── SECTION 7 : PATTERNS COURANTS ──
+  +'<div class="cheat-section">'
+  +'<div class="cheat-h2">7 \u2014 Patterns Courants \u2014 Recettes Prêtes \u00e0 l\u2019Emploi</div>'
+  +'<div class="pattern-grid">'
+
+  +'<div class="pattern-card"><div class="pattern-title">Centrage parfait</div><div class="pattern-use">Hero section, login, splash screen</div>'
+  +'<pre class="pattern-code"><span class="sc">.container</span> {\n  <span class="pc">display</span>: <span class="vc">flex</span>;\n  <span class="pc">justify-content</span>: <span class="vc">center</span>;\n  <span class="pc">align-items</span>: <span class="vc">center</span>;\n  <span class="pc">height</span>: <span class="vc">100vh</span>;\n}</pre></div>'
+
+  +'<div class="pattern-card"><div class="pattern-title">Navbar logo / liens</div><div class="pattern-use">Header, footer, barre d\u2019actions</div>'
+  +'<pre class="pattern-code"><span class="sc">.navbar</span> {\n  <span class="pc">display</span>: <span class="vc">flex</span>;\n  <span class="pc">justify-content</span>: <span class="vc">space-between</span>;\n  <span class="pc">align-items</span>: <span class="vc">center</span>;\n}</pre></div>'
+
+  +'<div class="pattern-card"><div class="pattern-title">Sticky footer</div><div class="pattern-use">Le footer reste toujours en bas m\u00eame si le contenu est court</div>'
+  +'<pre class="pattern-code"><span class="sc">.page</span> {\n  <span class="pc">display</span>: <span class="vc">flex</span>;\n  <span class="pc">flex-direction</span>: <span class="vc">column</span>;\n  <span class="pc">min-height</span>: <span class="vc">100vh</span>;\n}\n<span class="sc">main</span> { <span class="pc">flex</span>: <span class="vc">1</span>; }</pre></div>'
+
+  +'<div class="pattern-card"><div class="pattern-title">Sidebar fixe + contenu fluide</div><div class="pattern-use">Dashboard, app d\u2019administration</div>'
+  +'<pre class="pattern-code"><span class="sc">.layout</span> { <span class="pc">display</span>: <span class="vc">flex</span>; }\n<span class="sc">.sidebar</span> {\n  <span class="pc">width</span>: <span class="vc">220px</span>;\n  <span class="pc">flex-shrink</span>: <span class="vc">0</span>;\n}\n<span class="sc">.content</span> { <span class="pc">flex</span>: <span class="vc">1</span>; }</pre></div>'
+
+  +'<div class="pattern-card"><div class="pattern-title">El\u00e9ment flexible entre fixes</div><div class="pattern-use">Barre de recherche, toolbar</div>'
+  +'<pre class="pattern-code"><span class="sc">.bar</span> { <span class="pc">display</span>: <span class="vc">flex</span>; <span class="pc">gap</span>: <span class="vc">8px</span>; }\n<span class="sc">.btn</span>  { <span class="pc">flex-shrink</span>: <span class="vc">0</span>; }\n<span class="sc">input</span> { <span class="pc">flex</span>: <span class="vc">1</span>; }</pre></div>'
+
+  +'<div class="pattern-card"><div class="pattern-title">Grille responsive sans media query</div><div class="pattern-use">Cards, galeries</div>'
+  +'<pre class="pattern-code"><span class="sc">.grid</span> {\n  <span class="pc">display</span>: <span class="vc">flex</span>;\n  <span class="pc">flex-wrap</span>: <span class="vc">wrap</span>;\n  <span class="pc">gap</span>: <span class="vc">16px</span>;\n}\n<span class="sc">.card</span> { <span class="pc">flex</span>: <span class="vc">1 1 200px</span>; }</pre></div>'
+
+  +'<div class="pattern-card"><div class="pattern-title">Grille N colonnes avec gap</div><div class="pattern-use">Layout pr\u00e9cis 2 ou 3 colonnes</div>'
+  +'<pre class="pattern-code"><span class="sc">.grid</span> {\n  <span class="pc">display</span>: <span class="vc">flex</span>;\n  <span class="pc">flex-wrap</span>: <span class="vc">wrap</span>;\n  <span class="pc">gap</span>: <span class="vc">16px</span>;\n}\n<span class="sc">.card</span> {\n  <span class="pc">flex</span>: <span class="vc">1 1 calc(33.33% - 16px)</span>;\n}</pre></div>'
+
+  +'<div class="pattern-card"><div class="pattern-title">Titre + bouton en bas (carte)</div><div class="pattern-use">Composant carte avec CTA</div>'
+  +'<pre class="pattern-code"><span class="sc">.card</span> {\n  <span class="pc">display</span>: <span class="vc">flex</span>;\n  <span class="pc">flex-direction</span>: <span class="vc">column</span>;\n  <span class="pc">justify-content</span>: <span class="vc">space-between</span>;\n}\n<span class="sc">.btn</span> { <span class="pc">align-self</span>: <span class="vc">flex-end</span>; }</pre></div>'
+
+  +'</div></div>'
+
+  // ── SECTION 8 : PIÈGES ──
+  +'<div class="cheat-section">'
+  +'<div class="cheat-h2">8 \u2014 Pi\u00e8ges Fr\u00e9quents</div>'
+  +'<div class="gotcha-grid">'
+
+  +'<div class="gotcha-card"><div class="gotcha-title">align-items: left n\u2019existe pas</div><p>En Flexbox, les valeurs valides sont <code>flex-start</code>, <code>flex-end</code>, <code>center</code>, <code>stretch</code>, <code>baseline</code>.<br>Les navigateurs ignorent silencieusement <code>left</code> et appliquent le d\u00e9faut (<code>stretch</code>).</p></div>'
+
+  +'<div class="gotcha-card"><div class="gotcha-title">flex-direction: column inverse les axes</div><p>Quand <code>flex-direction: column</code>, <code>justify-content</code> contr\u00f4le le <strong>vertical</strong> et <code>align-items</code> contr\u00f4le l\u2019<strong>horizontal</strong>. L\u2019inverse de <code>row</code>.</p></div>'
+
+  +'<div class="gotcha-card"><div class="gotcha-title">align-content vs align-items</div><p><code>align-items</code> = alignement sur une seule ligne.<br><code>align-content</code> = r\u00e9partition de plusieurs lignes.<br><code>align-content</code> n\u2019a aucun effet sans <code>flex-wrap: wrap</code> ET plusieurs lignes.</p></div>'
+
+  +'<div class="gotcha-card"><div class="gotcha-title">flex: 1 et flex-basis: 0</div><p><code>flex: 1</code> = <code>flex-basis: 0</code>, pas <code>auto</code>. L\u2019espace est divis\u00e9 depuis 0.<br>Si tu veux que la taille naturelle du contenu soit la base, utilise <code>flex: auto</code> = <code>flex: 1 1 auto</code>.</p></div>'
+
+  +'<div class="gotcha-card"><div class="gotcha-title">flex-shrink: 1 par d\u00e9faut</div><p>Tous les items peuvent r\u00e9tr\u00e9cir par d\u00e9faut. Si tu veux qu\u2019un item garde sa taille fixe, ajoute <code>flex-shrink: 0</code> explicitement (ex\u00a0: sidebar, bouton dans une barre).</p></div>'
+
+  +'<div class="gotcha-card"><div class="gotcha-title">gap ne cr\u00e9e pas d\u2019espace aux bords</div><p><code>gap</code> = espace <em>entre</em> les items uniquement. Pour de l\u2019espace aux bords, utilise <code>padding</code> sur le conteneur. C\u2019est un avantage par rapport \u00e0 <code>margin</code> sur les enfants.</p></div>'
+
+  +'<div class="gotcha-card"><div class="gotcha-title">flex ne s\u2019applique qu\u2019aux enfants directs</div><p>Seuls les <em>enfants directs</em> d\u2019un flex container deviennent des flex items. Les petits-enfants ne sont pas affect\u00e9s \u2014 il faut cr\u00e9er un nouveau <code>display: flex</code> pour chaque niveau.</p></div>'
+
+  +'<div class="gotcha-card"><div class="gotcha-title">Text overflow dans un item flex</div><p>Par d\u00e9faut, <code>min-width: auto</code> emp\u00eache un item de r\u00e9tr\u00e9cir en dessous de son contenu.<br>Pour forcer le r\u00e9tr\u00e9cissement + text-overflow, ajoute <code>min-width: 0</code> sur l\u2019item.</p></div>'
+
+  +'</div></div>';
+}
+
+// ── CSS CHECKER ──
+function normVal(v) {
+  return v.replace(/\s+/g, ' ').trim().toLowerCase();
+}
+
+// D\u00e9compose flex: X Y Z en { grow, shrink, basis }
+function expandFlexValue(val) {
+  val = normVal(val);
+  if (val === 'none')  return { grow: '0', shrink: '0', basis: 'auto' };
+  if (val === 'auto')  return { grow: '1', shrink: '1', basis: 'auto' };
+  var parts = val.split(/\s+/);
+  var grow = '1', shrink = '1', basis = '0';
+  if (parts.length === 1) {
+    if (/^[\d.]/.test(parts[0])) { grow = parts[0]; }
+    else { basis = parts[0]; }
+  } else if (parts.length === 2) {
+    grow = parts[0];
+    if (/^[\d.]+$/.test(parts[1])) { shrink = parts[1]; }
+    else { basis = parts[1]; }
+  } else {
+    grow = parts[0]; shrink = parts[1]; basis = parts.slice(2).join(' ');
+  }
+  return { grow: grow, shrink: shrink, basis: basis };
+}
+
+// Compare une propri\u00e9t\u00e9 solution vs les props de l\u2019utilisateur
+// Accepte shorthand flex ET longhands \u00e9quivalents
+function propMatches(solProp, solVal, userProps) {
+  // Correspondance directe
+  if (userProps[solProp] !== undefined && normVal(userProps[solProp]) === normVal(solVal)) return true;
+
+  // Shorthand flex de la solution → accepter les longhands \u00e9quivalents
+  if (solProp === 'flex') {
+    var se = expandFlexValue(solVal);
+    // Utilisateur a \u00e9crit les trois longhands s\u00e9par\u00e9ment ?
+    var ug = userProps['flex-grow'], us = userProps['flex-shrink'], ub = userProps['flex-basis'];
+    if (ug !== undefined && us !== undefined && ub !== undefined) {
+      return normVal(ug) === se.grow && normVal(us) === se.shrink && normVal(ub) === se.basis;
+    }
+    // Utilisateur a \u00e9crit un shorthand diff\u00e9rent qui \u00e9quivaut ?
+    if (userProps['flex']) {
+      var ue = expandFlexValue(userProps['flex']);
+      return ue.grow === se.grow && ue.shrink === se.shrink && ue.basis === se.basis;
+    }
+  }
+
+  // Longhand flex-grow/shrink/basis de la solution → accepter le shorthand \u00e9quivalent
+  if ((solProp === 'flex-grow' || solProp === 'flex-shrink' || solProp === 'flex-basis') && userProps['flex']) {
+    var ue2 = expandFlexValue(userProps['flex']);
+    if (solProp === 'flex-grow')   return normVal(solVal) === ue2.grow;
+    if (solProp === 'flex-shrink') return normVal(solVal) === ue2.shrink;
+    if (solProp === 'flex-basis')  return normVal(solVal) === ue2.basis;
+  }
+
+  return false;
+}
+
+function parseCSSRules(css) {
+  css = css.replace(/\/\*[\s\S]*?\*\//g, '');
+  var rules = {};
+
+  // Extract @media blocks with brace counting
+  var mediaBlocks = [];
+  var cleanCSS = css;
+  var offsets = [];
+  var searchPos = 0;
+  while (true) {
+    var mi = cleanCSS.indexOf('@media', searchPos);
+    if (mi === -1) break;
+    var openBrace = cleanCSS.indexOf('{', mi);
+    if (openBrace === -1) break;
+    var cond = cleanCSS.slice(mi + 6, openBrace).trim();
+    var depth = 1, i = openBrace + 1;
+    while (i < cleanCSS.length && depth > 0) {
+      if (cleanCSS[i] === '{') depth++;
+      else if (cleanCSS[i] === '}') depth--;
+      i++;
+    }
+    mediaBlocks.push({ cond: cond, inner: cleanCSS.slice(openBrace + 1, i - 1) });
+    offsets.push([mi, i]);
+    searchPos = i;
+  }
+  // Remove @media blocks from cleanCSS (reverse order)
+  offsets.reverse().forEach(function(r) {
+    cleanCSS = cleanCSS.slice(0, r[0]) + cleanCSS.slice(r[1]);
+  });
+
+  // Parse regular rules
+  var re = /([^{}@]+)\{([^}]*)\}/g, m;
+  while ((m = re.exec(cleanCSS)) !== null) {
+    addCSSRule(rules, m[1].trim(), m[2]);
+  }
+
+  // Parse rules inside @media blocks
+  mediaBlocks.forEach(function(mb) {
+    var re2 = /([^{}]+)\{([^}]*)\}/g, m2;
+    while ((m2 = re2.exec(mb.inner)) !== null) {
+      addCSSRule(rules, '@media ' + mb.cond + ' | ' + m2[1].trim(), m2[2]);
+    }
+  });
+
+  return rules;
+}
+
+function addCSSRule(rules, selector, declBlock) {
+  selector = selector.replace(/\s+/g, ' ').trim();
+  if (!selector) return;
+  rules[selector] = rules[selector] || {};
+  declBlock.split(';').forEach(function(d) {
+    d = d.trim();
+    if (!d) return;
+    var c = d.indexOf(':');
+    if (c === -1) return;
+    var prop = d.slice(0, c).trim().toLowerCase();
+    var val = normVal(d.slice(c + 1));
+    if (prop) rules[selector][prop] = val;
+  });
+}
+
+function checkAnswer() {
+  var panel = document.getElementById('checkPanel');
+  // Toggle off if already showing
+  if (panel.classList.contains('visible')) {
+    panel.classList.remove('visible');
+    return;
+  }
+
+  var ex = EX[cur];
+  var userCSS = document.getElementById('editorCSS').value;
+  var solRules = parseCSSRules(ex.sol);
+  var userRules = parseCSSRules(userCSS);
+
+  var total = 0, correct = 0;
+  // Collect results grouped by selector
+  var grouped = [];
+
+  Object.keys(solRules).forEach(function(sel) {
+    var solProps = solRules[sel];
+    var selNorm = sel.replace(/\s+/g, ' ').trim();
+    var userSel = null;
+    Object.keys(userRules).forEach(function(us) {
+      if (us.replace(/\s+/g, ' ').trim() === selNorm) userSel = us;
+    });
+    var userProps = userSel ? userRules[userSel] : {};
+    var rows = [];
+
+    Object.keys(solProps).forEach(function(prop) {
+      total++;
+      var expected = solProps[prop];
+      // Ce que l'utilisateur a \u00e9crit (shorthand ou longhand)
+      var actual = null;
+      if (userProps[prop] !== undefined) {
+        actual = normVal(userProps[prop]);
+      } else if (prop === 'flex' && (userProps['flex-grow'] || userProps['flex-shrink'] || userProps['flex-basis'])) {
+        actual = 'flex-grow: ' + (userProps['flex-grow']||'?') + '; flex-shrink: ' + (userProps['flex-shrink']||'?') + '; flex-basis: ' + (userProps['flex-basis']||'?');
+      }
+      var ok = propMatches(prop, expected, userProps);
+      if (ok) correct++;
+      rows.push({ prop: prop, expected: expected, actual: actual, ok: ok });
+    });
+
+    if (rows.length) grouped.push({ sel: sel, rows: rows });
+  });
+
+  var allOk = correct === total;
+  var html = '';
+
+  if (allOk) {
+    html = '<span class="check-ok" style="font-size:.9rem">&#10003;&#10003; Parfait ! Toutes les propri\u00e9t\u00e9s sont correctes (' + total + '/' + total + ')</span>';
+  } else {
+    html = '<div class="check-summary" style="color:' + (allOk ? 'var(--green)' : 'var(--accent2)') + ';margin-bottom:8px">'
+      + (allOk ? '&#10003;' : '&#10007;') + ' ' + correct + '\u00a0/\u00a0' + total + ' propri\u00e9t\u00e9s correctes</div>';
+
+    grouped.forEach(function(g) {
+      var selEsc = g.sel.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      html += '<div style="margin-bottom:6px"><span style="color:#7b85a5;font-size:.75rem;text-transform:uppercase;letter-spacing:.5px">' + selEsc + '</span>';
+      g.rows.forEach(function(r) {
+        if (r.ok) {
+          html += '<div class="check-ok" style="padding-left:10px;font-size:.8rem">&#10003; <code>' + r.prop + ': ' + r.expected + '</code></div>';
+        } else if (r.actual) {
+          html += '<div class="check-err" style="padding-left:10px;font-size:.8rem">&#10007; <code>' + r.prop + '</code> : tu as <code>' + r.actual + '</code> &rarr; attendu <code>' + r.expected + '</code></div>';
+        } else {
+          html += '<div class="check-err" style="padding-left:10px;font-size:.8rem">&#10007; <code>' + r.prop + '</code> manquant &mdash; attendu <code>' + r.expected + '</code></div>';
+        }
+      });
+      html += '</div>';
+    });
+  }
+
+  panel.innerHTML = html;
+  panel.classList.add('visible');
+}
+
+var explainVisible = false;
+function toggleExplain() {
+  var panel = document.getElementById('explainPanel');
+  var btn = document.getElementById('btnExplain');
+  explainVisible = !explainVisible;
+  if (explainVisible) {
+    panel.innerHTML = EXPLAIN[cur] || '<em>Pas encore d\u2019explication pour cet exercice.</em>';
+    panel.classList.add('visible');
+    btn.textContent = '\u25b2 Fermer';
+  } else {
+    panel.classList.remove('visible');
+    btn.textContent = 'Explication';
+  }
+}
+
+function navigate(dir) {
+  var n = cur + dir;
+  if (n >= 0 && n < EX.length) loadEx(n);
+}
+
+function updateProgress() {
+  var pct = (done.length / EX.length) * 100;
+  document.getElementById('progressFill').style.width = pct + '%';
+  document.getElementById('progressLabel').textContent = done.length + ' / ' + EX.length;
+}
+
+// Tab key in editors
+var tas = document.querySelectorAll('textarea');
+for (var ti = 0; ti < tas.length; ti++) {
+  tas[ti].addEventListener('keydown', function(e) {
+    if (e.key !== 'Tab') return;
+    e.preventDefault();
+    var ta = e.target, s = ta.selectionStart;
+    ta.value = ta.value.slice(0, s) + '  ' + ta.value.slice(ta.selectionEnd);
+    ta.selectionStart = ta.selectionEnd = s + 2;
+    autoRun();
+  });
+}
+
+// Expose globals for onclick + oninput handlers
+window.navigate = navigate;
+window.toggleHint = toggleHint;
+window.showSolution = showSolution;
+window.checkAnswer = checkAnswer;
+window.toggleExplain = toggleExplain;
+window.resetCode = resetCode;
+window.markDone = markDone;
+window.switchTab = switchTab;
+window.runCode = runCode;
+window.autoRun = autoRun; // requis par oninput="autoRun()" dans les textareas
+window.closeCelebration = closeCelebration;
+window.openCheatSheet = openCheatSheet;
+window.closeCheatSheet = closeCheatSheet;
+window.printCheatSheet = printCheatSheet;
+
+// Raccourcis clavier globaux
+document.addEventListener('keydown', function(e) {
+  // Ctrl+Enter = Run
+  if (e.ctrlKey && e.key === 'Enter') {
+    e.preventDefault();
+    runCode();
+  }
+  // Echap = fermer tous les panneaux et modaux
+  if (e.key === 'Escape') {
+    var cheat = document.getElementById('cheatOverlay');
+    if (cheat && cheat.classList.contains('open')) { closeCheatSheet(); return; }
+    var celeb = document.getElementById('celebOverlay');
+    if (celeb && celeb.style.display !== 'none' && celeb.style.display !== '') { closeCelebration(); return; }
+    document.getElementById('hintPanel').classList.remove('visible');
+    document.getElementById('checkPanel').classList.remove('visible');
+    if (explainVisible) toggleExplain();
+    hintVisible = false;
+  }
+});
+
+window.addEventListener('DOMContentLoaded', init);
+
+})();
+</script>
+</body>
+</html>
